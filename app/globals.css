@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Palette. The reference is a neighborhood salon that's been in the same
+   shopping center for twenty years: the striped awning out front, the brass
+   hardware on the mirrors, the little appointment card she writes your next
+   date on. Brass is an accent — it should appear in about six places total.
+   --------------------------------------------------------------------------- */
+:root {
+  --ink: #22303a; /* body text, headings */
+  --awning: #2e5e4e; /* primary — header, buttons, section bands */
+  --awning-dark: #234a3e; /* button hover/active */
+  --brass: #b07d2b; /* accent — rules and small marks */
+
+  /* Brass at its spec'd value is only ~3.1:1 on the tint band, which fails the
+     4.5:1 body-text floor this site is held to. Rules and marks keep the bright
+     brass; brass *text* uses this darker draw of the same hue (4.9:1 on tint,
+     5.4:1 on paper). Measured, not assumed. */
+  --brass-ink: #8a5f17;
+  --paper: #fbf9f5; /* page background */
+  --tint: #e9f0eb; /* alternating section background */
+
+  /* Focus rings flip to paper inside dark bands (see .on-awning). */
+  --focus: #22303a;
+
+  /* Sticky header height + a little breathing room, so anchor targets land
+     below the header instead of underneath it. Measured, not guessed: the
+     header is 205px on mobile (two rows of nav) and 142px from 768px up.
+     Re-measure if the header gains or loses a row. */
+  --header-h: 13.5rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --header-h: 9.5rem;
+  }
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-awning: var(--awning);
+  --color-awning-dark: var(--awning-dark);
+  --color-brass: var(--brass);
+  --color-brass-ink: var(--brass-ink);
+  --color-paper: var(--paper);
+  --color-tint: var(--tint);
+
+  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-source-sans), system-ui, -apple-system, "Segoe UI",
+    Helvetica, Arial, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Base. Root stays at 16px so rem values match the spec's type scale; the body
+   is set to 19px. Nothing on this page is allowed below 16px.
+   --------------------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+  /* Anchor links must land below the sticky header, not underneath it. */
+  scroll-padding-top: var(--header-h);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1.1875rem; /* 19px */
+  line-height: 1.65;
+  /* Room for the fixed mobile call bar, home indicator included. */
+  padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.375rem;
+}
+
+.text-small {
+  font-size: 1rem; /* the floor — never smaller, footer included */
+}
+
+/* Browsers give fieldset an implicit min-width: min-content, which stops the
+   horizontal day scroller inside it from ever shrinking — it overflows the
+   card instead of scrolling. */
+fieldset {
+  min-width: 0;
+}
+
+/* Visible focus at every stop. Dark bands opt into a light ring. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.on-awning {
+  --focus: var(--paper);
+}
+
+/* Anchor offset lives on the scrollport only. Adding scroll-margin-top to the
+   sections as well would stack with this and land them a full header lower. */
+
+/* ---------------------------------------------------------------------------
+   Buttons. 48px minimum tap target everywhere, 12px between adjacent ones.
+   --------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem; /* 48px */
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 1.1875rem;
+  /* Body line-height is 1.65 for reading; inside a button it just makes the
+     control tall and loose. Still lands above the 48px minimum. */
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.btn-primary {
+  background: var(--awning);
+  color: var(--paper);
+  border: 2px solid var(--awning);
+}
+
+.btn-primary:hover {
+  background: var(--awning-dark);
+  border-color: var(--awning-dark);
+}
+
+.btn-secondary {
+  background: var(--paper);
+  color: var(--awning-dark);
+  border: 2px solid var(--awning);
+}
+
+.btn-secondary:hover {
+  background: var(--tint);
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   The appointment card. This is the one memorable thing on the page: paper,
+   a thin brass rule under the header, a half-degree of rotation that
+   straightens when you start filling it in. Everything around it stays flat.
+   --------------------------------------------------------------------------- */
+.card {
+  background: var(--paper);
+  border: 1px solid rgba(34, 48, 58, 0.14);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 2px rgba(34, 48, 58, 0.06),
+    0 12px 28px -14px rgba(34, 48, 58, 0.28);
+}
+
+.card-tilt {
+  transform: rotate(-0.5deg);
+  transition: transform 150ms ease-out;
+}
+
+.card-tilt:focus-within {
+  transform: rotate(0deg);
+}
+
+/* The hours block gets the same card treatment, tilted the other way, so the
+   two read as a pair of cards pinned to the same board. */
+.card-tilt-alt {
+  transform: rotate(0.4deg);
+  transition: transform 150ms ease-out;
+}
+
+.card-tilt-alt:hover,
+.card-tilt-alt:focus-within {
+  transform: rotate(0deg);
+}
+
+.card-rule {
+  border-bottom: 2px solid var(--brass);
+}
+
+/* The striped awning out front, as a valance under the header. */
+.awning-stripe {
+  height: 0.625rem;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--awning-dark) 0 24px,
+    var(--paper) 24px 48px
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Form controls. Labels are always visible above the field — the placeholder
+   is never the label.
+   --------------------------------------------------------------------------- */
+.field-input {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 1.1875rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #ffffff;
+  border: 2px solid rgba(34, 48, 58, 0.35);
+  border-radius: 4px;
+  transition: border-color 150ms ease-out;
+}
+
+.field-input:hover {
+  border-color: rgba(34, 48, 58, 0.55);
+}
+
+.field-input[aria-invalid="true"] {
+  border-color: #a12a1f;
+}
+
+select.field-input {
+  /* Keep the native control — it is the most familiar thing on an iPad. */
+  appearance: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Choice controls: day cards, time slots, reply-channel cards.
+
+   Each is a real <input type="radio"> visually hidden behind a styled <label>.
+   That buys arrow-key navigation, "3 of 15" announcements, and native form
+   semantics for free — none of which a div-with-onClick gives you.
+   --------------------------------------------------------------------------- */
+.choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid rgba(34, 48, 58, 0.35);
+  border-radius: 4px;
+  background: #ffffff;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.choice:hover {
+  border-color: var(--awning);
+  background: var(--tint);
+}
+
+/* Selected gets a fill and a checkmark, not just a heavier border. */
+.choice-input:checked + .choice {
+  background: var(--awning);
+  border-color: var(--awning);
+  color: var(--paper);
+}
+
+.choice-input:checked + .choice:hover {
+  background: var(--awning-dark);
+  border-color: var(--awning-dark);
+}
+
+.choice-input:focus-visible + .choice {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.choice-check {
+  visibility: hidden;
+}
+
+.choice-input:checked + .choice .choice-check {
+  visibility: visible;
+}
+
+/* Step 1 — day cards. 96px tall minimum. */
+.choice-day {
+  flex-direction: column;
+  gap: 0.125rem;
+  min-height: 6rem;
+  /* Narrow enough that two cards clear the arrows at 375px — one visible card
+     reads as "this is the only option" rather than "there are more, scroll". */
+  min-width: 6.75rem;
+  padding: 0.75rem 0.625rem;
+}
+
+/* Step 2 — time slots. 56px tall minimum, 12px gaps come from the grid. */
+.choice-time {
+  min-height: 3.5rem;
+  font-size: 1.1875rem;
+  white-space: nowrap;
+}
+
+/* Reply channel. Larger, with room for the explanatory line underneath. */
+.choice-channel {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-height: 4.5rem;
+  padding: 1rem;
+  text-align: left;
+}
+
+/* ---------------------------------------------------------------------------
+   Section entry animation: a 150ms fade-up, and nothing else.
+   --------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal,
+  .card-tilt,
+  .card-tilt-alt,
+  .btn {
+    transition: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-tilt,
+  .card-tilt-alt {
+    transform: none;
+  }
+}
