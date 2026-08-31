@@ -6,7 +6,7 @@ export function About() {
 
   return (
     <section id="about" className="bg-paper">
-      <div className="mx-auto max-w-5xl px-4 py-12 md:py-16">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <h2>{about.heading}</h2>
 
         <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:gap-10">

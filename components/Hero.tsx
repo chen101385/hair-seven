@@ -5,7 +5,7 @@ import { PhoneIcon, PinIcon } from "./icons";
 export function Hero() {
   return (
     <section id="top" className="bg-paper">
-      <div className="mx-auto max-w-5xl px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <h1>{site.name}</h1>
 
         <p className="mt-4 max-w-2xl text-[1.3rem]">{site.tagline}</p>

@@ -212,24 +212,47 @@ export function getAvailableDays(now: Date = new Date()): AvailableDay[] {
   return days;
 }
 
-/**
- * "Thursday, Sep 18 at 2:00 PM", or the visitor's own words if they're flexible.
- * Shared by the on-screen confirmation and the email, so the two always agree.
- */
-export function describeSlot(picker: PickerValue): string {
-  if (picker.flexible) {
-    const note = picker.flexibleText.trim();
-    return note ? `Flexible — ${note}` : "Flexible — no preference given";
-  }
-  if (!picker.date || picker.slot === null) return "—";
-  return `${formatFullDateLabel(picker.date)} at ${formatTime12(picker.slot)}`;
+/** "Flexible — mornings next week", or null if they picked real times. */
+export function flexibleNote(picker: PickerValue): string | null {
+  if (!picker.flexible) return null;
+  const note = picker.flexibleText.trim();
+  return note ? `Flexible — ${note}` : "Flexible — no preference given";
 }
 
-/** The subject-line form: short enough to read in a phone notification. */
+/** "Thursday, Sep 18", or the visitor's own words if they're flexible. */
+export function describeDay(picker: PickerValue): string {
+  return flexibleNote(picker) ?? (picker.date ? formatFullDateLabel(picker.date) : "—");
+}
+
+/** "10:00 AM, 2:00 PM, 3:30 PM" — every time the visitor said would work. */
+export function describeTimes(picker: PickerValue): string {
+  if (picker.flexible || picker.slots.length === 0) return "—";
+  return picker.slots.map(formatTime12).join(", ");
+}
+
+/**
+ * One-line form for the confirmation card. Shared with the email so the two
+ * can never disagree about what was actually requested.
+ */
+export function describeSlot(picker: PickerValue): string {
+  const flexible = flexibleNote(picker);
+  if (flexible) return flexible;
+  if (!picker.date || picker.slots.length === 0) return "—";
+  return `${formatFullDateLabel(picker.date)} — ${describeTimes(picker)}`;
+}
+
+/**
+ * The subject-line form: short enough to read in a phone notification.
+ * With several times picked, the count is more useful than the list — Kim
+ * opens the email to see which ones.
+ */
 export function describeSlotShort(picker: PickerValue): string {
   if (picker.flexible) return "Flexible";
-  if (!picker.date || picker.slot === null) return "No time given";
-  return `${formatFullDateLabel(picker.date)} ${formatTime12(picker.slot)}`;
+  if (!picker.date || picker.slots.length === 0) return "No time given";
+  const day = formatFullDateLabel(picker.date);
+  return picker.slots.length === 1
+    ? `${day} ${formatTime12(picker.slots[0])}`
+    : `${day} (${picker.slots.length} times)`;
 }
 
 /** "$45–$75", "$45", or "Call for pricing." */

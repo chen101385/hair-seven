@@ -67,11 +67,12 @@ export function validateContact(p: ContactPayload): Record<string, string> {
     errors.email = "Please enter an email address so Kim can write back.";
   }
 
-  if (p.formType === "appointment") {
-    const hasSlot = Boolean(p.primary.date) && p.primary.slot !== null;
-    if (!p.primary.flexible && !hasSlot) {
+  if (p.formType === "appointment" && !p.primary.flexible) {
+    if (!p.primary.date) {
+      errors.primary = "Please pick a day, or choose “I’m flexible” below.";
+    } else if (p.primary.slots.length === 0) {
       errors.primary =
-        "Please pick a day and a time, or choose “I’m flexible” below.";
+        "Please tap at least one time that works for you, or choose “I’m flexible” below.";
     }
   }
 

@@ -4,7 +4,7 @@ import { formatPrice } from "@/lib/hours";
 export function Services() {
   return (
     <section id="services" className="bg-tint">
-      <div className="mx-auto max-w-5xl px-4 py-12 md:py-16">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <h2>Services</h2>
 
         <ul className="mt-8 border-y border-ink/15">

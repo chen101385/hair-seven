@@ -23,7 +23,7 @@ export function Header() {
         Skip to the booking form
       </a>
 
-      <div className="mx-auto max-w-5xl px-4 py-2.5">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <a
             href="#top"

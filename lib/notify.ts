@@ -9,7 +9,13 @@
 
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
-import { describeSlot, describeSlotShort } from "./hours";
+import { site } from "@/content/site";
+import {
+  describeDay,
+  describeSlotShort,
+  describeTimes,
+  flexibleNote,
+} from "./hours";
 import { formatPhone } from "./validate";
 import type { ContactPayload } from "./types";
 
@@ -23,7 +29,10 @@ export type Mail = {
 const LABEL_WIDTH = 12;
 
 function row(label: string, value: string): string {
-  return `${(label + ":").padEnd(LABEL_WIDTH)}${value}`;
+  // padEnd is a no-op once the label is longer than the column, which would
+  // run the label straight into the value. Always keep at least one space.
+  const key = `${label}:`;
+  return `${key.padEnd(LABEL_WIDTH)}${key.length >= LABEL_WIDTH ? " " : ""}${value}`;
 }
 
 /**
@@ -47,12 +56,14 @@ export function buildEmail(p: ContactPayload): Mail {
       byText ? "Text" : "Email"
     }`;
 
-    const hasBackup =
-      p.backupOpen && (Boolean(p.backup.date) || p.backup.flexible);
-
+    // Day and times on separate rows: Kim reads the day, then scans the list
+    // against her book. The times line is the one she acts on.
+    const flexible = flexibleNote(p.primary);
     const lines = [
-      row("Requested", describeSlot(p.primary)),
-      hasBackup ? row("Alternate", describeSlot(p.backup)) : null,
+      flexible ? row("Requested", flexible) : row("Day", describeDay(p.primary)),
+      flexible
+        ? null
+        : row(p.primary.slots.length === 1 ? "Time" : "Times", describeTimes(p.primary)),
       row("Service", p.service.trim() || "Not sure yet"),
       row("Name", name),
       p.notes.trim() ? row("Notes", p.notes.trim()) : null,
@@ -140,7 +151,6 @@ async function recordSubmission(mail: Mail, payload: ContactPayload) {
     email: payload.email.trim() || null,
     service: payload.service.trim() || null,
     primary: payload.primary,
-    backup: payload.backupOpen ? payload.backup : null,
     notes: payload.notes.trim() || null,
     question: payload.question.trim() || null,
   };
@@ -163,7 +173,7 @@ function printStub(mail: Mail) {
     [
       "",
       rule,
-      "  HAIR SEVEN — STUB MODE (RESEND_API_KEY is not set)",
+      `  ${site.name.toUpperCase()} — STUB MODE (RESEND_API_KEY is not set)`,
       "  Nothing was emailed. This is what would have gone out.",
       rule,
       row("To", mail.to),

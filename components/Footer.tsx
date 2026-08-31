@@ -8,7 +8,7 @@ export function Footer() {
     <footer className="on-awning bg-awning text-paper">
       <div className="awning-stripe" aria-hidden="true" />
 
-      <div className="mx-auto max-w-5xl px-4 py-10 md:py-12">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 md:py-12">
         <p className="font-display text-[1.5rem] font-semibold">{site.name}</p>
 
         <div className="mt-6 grid gap-8 sm:grid-cols-2 md:grid-cols-3">

@@ -38,7 +38,7 @@ export function BookSection({ days }: { days: AvailableDay[] }) {
 
   return (
     <section id="book" className="bg-paper">
-      <div className="mx-auto max-w-3xl px-4 py-12 md:py-16">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <h2>Book with Kim</h2>
         <p className="mt-3">
           Send a request and Kim will get back to you herself. If you’d rather

@@ -2,15 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AvailableDay } from "@/lib/hours";
-import { formatTime12 } from "@/lib/hours";
+import { describeTimes, formatTime12 } from "@/lib/hours";
 import type { PickerValue } from "@/lib/types";
 import { FieldError } from "./Field";
 import { ArrowIcon, CheckIcon } from "./icons";
 
 /**
  * Buttons, not a calendar widget. No native datetime-local, no date library UI.
- * Step 1 picks a day from a row of large cards; step 2 picks a time from a
- * wrapped grid generated from that day's hours in content/site.ts.
+ *
+ * Step 1 picks one day. Step 2 lets the visitor tap *every* time on that day
+ * that would work for them — Kim keeps her appointment book on paper, so she
+ * reads the list and confirms whichever one she actually has free. Picking
+ * several is the normal case, not an advanced one, so the copy says so plainly
+ * and a running summary shows what's been chosen.
  *
  * Closed days never reach this component — getAvailableDays() has already
  * dropped them, along with blacked-out dates and anything inside the lead time.
@@ -21,14 +25,12 @@ export function DayTimePicker({
   value,
   onChange,
   error,
-  allowFlexible = false,
 }: {
   id: string;
   days: AvailableDay[];
   value: PickerValue;
   onChange: (next: PickerValue) => void;
   error?: string;
-  allowFlexible?: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -61,6 +63,13 @@ export function DayTimePicker({
     el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
   };
 
+  const toggleSlot = (slot: number) => {
+    const slots = value.slots.includes(slot)
+      ? value.slots.filter((s) => s !== slot)
+      : [...value.slots, slot].sort((a, b) => a - b);
+    onChange({ ...value, slots });
+  };
+
   if (days.length === 0) {
     return (
       <div>
@@ -74,9 +83,9 @@ export function DayTimePicker({
     );
   }
 
+  const count = value.slots.length;
+
   return (
-    // tabIndex -1 so a failed submit can move focus here and land the visitor
-    // on the picker itself rather than somewhere in the middle of 15 radios.
     <div
       id={id}
       tabIndex={-1}
@@ -149,9 +158,8 @@ export function DayTimePicker({
                       className="choice-input sr-only"
                       checked={value.date === day.date}
                       onChange={() =>
-                        // Changing the day always clears the time — the old one
-                        // may not even exist on the new day.
-                        onChange({ ...value, date: day.date, slot: null })
+                        // Times belong to a day. Changing the day clears them.
+                        onChange({ ...value, date: day.date, slots: [] })
                       }
                     />
                     <label htmlFor={inputId} className="choice choice-day">
@@ -180,28 +188,33 @@ export function DayTimePicker({
             />
           </div>
 
-          {/* Step 2 — pick a time */}
+          {/* Step 2 — pick every time that works */}
           {selectedDay ? (
             <div className="mt-6">
               <p id={`${id}-time-label`} className="font-semibold">
-                Step 2 — pick a time on {selectedDay.fullLabel}
+                Step 2 — pick every time that works on {selectedDay.fullLabel}
               </p>
+              <p id={`${id}-time-hint`} className="mt-1 mb-2">
+                Tap as many as you like. Kim will write back and confirm one of
+                them — the more you pick, the easier it is for her to fit you in.
+              </p>
+
               <div
-                role="radiogroup"
+                role="group"
                 aria-labelledby={`${id}-time-label`}
-                className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
+                aria-describedby={`${id}-time-hint`}
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
               >
                 {selectedDay.slots.map((slot) => {
                   const inputId = `${id}-time-${slot}`;
                   return (
                     <div key={slot} className="relative">
                       <input
-                        type="radio"
+                        type="checkbox"
                         id={inputId}
-                        name={`${id}-time`}
                         className="choice-input sr-only"
-                        checked={value.slot === slot}
-                        onChange={() => onChange({ ...value, slot })}
+                        checked={value.slots.includes(slot)}
+                        onChange={() => toggleSlot(slot)}
                       />
                       <label htmlFor={inputId} className="choice choice-time">
                         <CheckIcon className="choice-check h-4 w-4" />
@@ -211,20 +224,39 @@ export function DayTimePicker({
                   );
                 })}
               </div>
+
+              {/* Says back what they've chosen, and announces changes. */}
+              <div aria-live="polite" className="mt-4">
+                {count > 0 ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded border-2 border-awning/35 bg-tint p-3">
+                    <p>
+                      <span className="font-semibold">
+                        You picked {count} {count === 1 ? "time" : "times"}:
+                      </span>{" "}
+                      {describeTimes(value)}
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-secondary px-4"
+                      onClick={() => onChange({ ...value, slots: [] })}
+                    >
+                      Clear times
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           ) : null}
 
-          {allowFlexible ? (
-            <button
-              type="button"
-              className="btn btn-secondary mt-6 w-full sm:w-auto"
-              onClick={() =>
-                onChange({ ...value, flexible: true, date: null, slot: null })
-              }
-            >
-              I’m flexible / none of these work
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn-secondary mt-6 w-full sm:w-auto"
+            onClick={() =>
+              onChange({ ...value, flexible: true, date: null, slots: [] })
+            }
+          >
+            I’m flexible / none of these work
+          </button>
         </>
       )}
 

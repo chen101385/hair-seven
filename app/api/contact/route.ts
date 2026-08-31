@@ -25,12 +25,27 @@ function str(value: unknown, max: number): string {
   return typeof value === "string" ? value.slice(0, max) : "";
 }
 
+/** A day has at most 48 half-hour slots; anything past that is not a person. */
+const MAX_SLOTS = 48;
+
 function picker(value: unknown): PickerValue {
   if (typeof value !== "object" || value === null) return { ...emptyPicker };
   const v = value as Record<string, unknown>;
+  const slots = Array.isArray(v.slots)
+    ? Array.from(
+        new Set(
+          v.slots.filter(
+            (s): s is number => typeof s === "number" && Number.isFinite(s),
+          ),
+        ),
+      )
+        .sort((a, b) => a - b)
+        .slice(0, MAX_SLOTS)
+    : [];
+
   return {
     date: typeof v.date === "string" ? v.date.slice(0, 10) : null,
-    slot: typeof v.slot === "number" && Number.isFinite(v.slot) ? v.slot : null,
+    slots,
     flexible: v.flexible === true,
     flexibleText: str(v.flexibleText, MAX_LENGTHS.flexibleText),
   };
@@ -52,8 +67,6 @@ function normalize(raw: unknown): ContactPayload {
     email: str(r.email, MAX_LENGTHS.email),
     service: str(r.service, MAX_LENGTHS.service),
     primary: picker(r.primary),
-    backup: picker(r.backup),
-    backupOpen: r.backupOpen === true,
     notes: str(r.notes, MAX_LENGTHS.notes),
     question: str(r.question, MAX_LENGTHS.question),
     company: str(r.company, 200),
@@ -62,15 +75,16 @@ function normalize(raw: unknown): ContactPayload {
 }
 
 /**
- * A slot the visitor picked an hour ago can go stale — the lead-time window
- * moves. Re-check against the same generator the picker used rather than
- * trusting whatever the browser sent.
+ * Slots the visitor picked an hour ago can go stale — the lead-time window
+ * moves. Re-check every one against the same generator the picker used rather
+ * than trusting whatever the browser sent.
  */
-function slotStillOffered(value: PickerValue): boolean {
+function slotsStillOffered(value: PickerValue): boolean {
   if (value.flexible) return true;
-  if (!value.date || value.slot === null) return false;
+  if (!value.date || value.slots.length === 0) return false;
   const day = getAvailableDays().find((d) => d.date === value.date);
-  return Boolean(day?.slots.includes(value.slot));
+  if (!day) return false;
+  return value.slots.every((slot) => day.slots.includes(slot));
 }
 
 function fail(
@@ -108,20 +122,12 @@ export async function POST(request: Request) {
   if (
     payload.formType === "appointment" &&
     !fieldErrors.primary &&
-    !slotStillOffered(payload.primary)
+    !slotsStillOffered(payload.primary)
   ) {
     fieldErrors.primary =
-      "That time isn't available anymore. Please pick another one.";
-  }
-
-  if (
-    payload.formType === "appointment" &&
-    payload.backupOpen &&
-    (payload.backup.date || payload.backup.flexible) &&
-    !slotStillOffered(payload.backup)
-  ) {
-    fieldErrors.backup =
-      "That backup time isn't available anymore. Please pick another one.";
+      payload.primary.slots.length > 1
+        ? "Some of those times aren’t available anymore. Please pick again."
+        : "That time isn’t available anymore. Please pick another one.";
   }
 
   if (Object.keys(fieldErrors).length > 0) {

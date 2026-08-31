@@ -75,8 +75,15 @@ directly.
 | `blackoutDates` | One-off closures: `["2026-11-26"]`. Vacations and holidays. Removes the day from the picker but leaves the weekly Hours table alone |
 | `replyWindow` | The "24 to 48 hours" promise, used in three places |
 
-With the current settings, a 10:00–18:00 day yields 15 slots: 10:00 AM through
-5:00 PM.
+With the current settings, a 10:00–18:00 day yields 15 slots (10:00 AM through
+5:00 PM) and Sunday's 10:00–17:00 yields 13 (through 4:00 PM).
+
+**How the booking actually works.** Kim keeps her appointment book on paper, so
+the site never claims to hold a slot. A visitor picks **one day** and then taps
+**every time on it that would work for them** — several is the normal case. The
+email lists all of them, Kim checks her book, and she replies confirming
+whichever one she has. That is why there is no "backup time" field: picking four
+times on Thursday does the same job with one less thing to understand.
 
 **Prices.** `$45–$75` renders from `priceLow` / `priceHigh`. Set them to the
 same number for a single price. Set either to `null` and it renders
@@ -171,14 +178,21 @@ about half would rather just call. That shapes the whole thing:
 - The phone number is in the header at every screen size, as a `tel:` link.
 - No hamburger menu. On mobile the nav wraps to two rows of full-width labeled buttons.
 - The day/time picker is buttons, not a calendar widget. No `datetime-local`, no date library UI.
+- Times are multi-select, with a running "You picked 3 times: …" summary and a Clear button, so nobody has to remember what they tapped.
 - Errors are inline and in plain words: "Please enter a mobile number so Kim can text you back," never "Invalid input."
 - Nothing a visitor typed is ever cleared by an error, including the picker selection.
 - Spam control is a honeypot field plus a minimum time-on-page check. No CAPTCHA — a CAPTCHA locks out exactly the people this site exists for.
 
 Verified: zero `axe-core` violations (WCAG 2.1 A/AA plus best-practice) across
-the default, error, flexible, question-tab, and confirmation states at both
-mobile and desktop widths; no horizontal scroll down to 320px or at 200% zoom;
-visible focus ring at every keyboard stop.
+the default, times-picked, error, flexible, question-tab, and confirmation
+states; visible focus ring at every keyboard stop; no horizontal scroll at 200%
+zoom.
+
+Checked at 320, 375, 390, 768, 834, 1024 and 1440px — phone, iPad portrait and
+landscape, and desktop. At every one of them: no horizontal scroll, no tap
+target under 48px, no text under 16px, and anchor links that land clear of the
+sticky header. The fixed call bar shows below 768px and hides above it, where
+the header nav is already on one row.
 
 ### Deliberately out of scope
 
