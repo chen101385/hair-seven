@@ -51,6 +51,29 @@ export function useContactForm({
     [],
   );
 
+  /**
+   * Check one field when the visitor leaves it, so a mistyped email or phone
+   * is caught right there instead of at submit time.
+   *
+   * Only fires when the field has something in it. Tabbing past an empty field
+   * you haven't reached yet shouldn't scold you — that's submit's job.
+   */
+  const checkOnBlur = useCallback(
+    (field: keyof ContactPayload & string) => {
+      const current = values[field];
+      if (typeof current === "string" && current.trim() === "") return;
+
+      const found = validateContact(values);
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (found[field]) next[field] = found[field];
+        else delete next[field];
+        return next;
+      });
+    },
+    [values],
+  );
+
   const focusFirstError = useCallback(
     (found: Record<string, string>) => {
       const field = fieldOrder.find((name) => found[name]);
@@ -112,6 +135,7 @@ export function useContactForm({
   return {
     values,
     set,
+    checkOnBlur,
     errors,
     status,
     submitError,

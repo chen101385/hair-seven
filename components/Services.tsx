@@ -15,7 +15,16 @@ export function Services() {
             >
               <div className="sm:flex-1">
                 <h3>{service.name}</h3>
-                <p className="mt-1">{service.description}</p>
+                {service.description ? (
+                  <p className="mt-1">{service.description}</p>
+                ) : null}
+                {service.items.length > 0 ? (
+                  <ul className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:max-w-md">
+                    {service.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
                 {service.note ? (
                   <p className="mt-1 text-small text-ink/75">{service.note}</p>
                 ) : null}

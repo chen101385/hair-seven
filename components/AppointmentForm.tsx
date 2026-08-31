@@ -44,7 +44,7 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
     }
   }, []);
 
-  const { values, set, errors, status, submitError, confirmed, submit } =
+  const { values, set, checkOnBlur, errors, status, submitError, confirmed, submit } =
     useContactForm({
       initial: emptyPayload("appointment"),
       fieldOrder: FIELD_ORDER,
@@ -148,6 +148,7 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         onChannelChange={(next) => set("replyChannel", next)}
         onPhoneChange={(next) => set("phone", next)}
         onEmailChange={(next) => set("email", next)}
+        onBlurField={checkOnBlur}
       />
 
       <Field

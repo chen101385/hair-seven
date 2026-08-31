@@ -1,6 +1,6 @@
-# Hair Seven
+# Hair 7
 
-Marketing site for Hair Seven, a single-owner hair salon in Mountain View, CA.
+Marketing site for Hair 7, a single-owner hair salon in Mountain View, CA.
 It replaces a Yelp listing as the salon's primary web presence.
 
 One scrolling page. Two forms — an appointment request and a general question —

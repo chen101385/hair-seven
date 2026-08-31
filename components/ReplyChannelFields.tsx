@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReplyChannel } from "@/lib/types";
+import { formatPhoneInput } from "@/lib/validate";
 import { Field, FieldError, describedBy } from "./Field";
 import { ChatIcon, MailIcon } from "./icons";
 
@@ -18,6 +19,7 @@ export function ReplyChannelFields({
   onChannelChange,
   onPhoneChange,
   onEmailChange,
+  onBlurField,
 }: {
   id: string;
   channel: ReplyChannel | null;
@@ -27,6 +29,7 @@ export function ReplyChannelFields({
   onChannelChange: (next: ReplyChannel) => void;
   onPhoneChange: (next: string) => void;
   onEmailChange: (next: string) => void;
+  onBlurField: (field: "phone" | "email") => void;
 }) {
   return (
     <div className="space-y-5">
@@ -72,11 +75,15 @@ export function ReplyChannelFields({
             type="tel"
             inputMode="tel"
             autoComplete="tel"
+            placeholder="(650) 555-0123"
+            maxLength={14}
             className="field-input"
             value={phone}
             aria-invalid={errors.phone ? true : undefined}
             aria-describedby={describedBy(`${id}-phone`, false, Boolean(errors.phone))}
-            onChange={(event) => onPhoneChange(event.target.value)}
+            // Formats as they type — the field always reads (650) 949-0796.
+            onChange={(event) => onPhoneChange(formatPhoneInput(event.target.value))}
+            onBlur={() => onBlurField("phone")}
           />
         </Field>
       ) : null}
@@ -88,11 +95,14 @@ export function ReplyChannelFields({
             type="email"
             inputMode="email"
             autoComplete="email"
+            placeholder="you@example.com"
             className="field-input"
             value={email}
             aria-invalid={errors.email ? true : undefined}
             aria-describedby={describedBy(`${id}-email`, false, Boolean(errors.email))}
             onChange={(event) => onEmailChange(event.target.value)}
+            // Checked when they leave the field, not only at submit.
+            onBlur={() => onBlurField("email")}
           />
         </Field>
       ) : null}

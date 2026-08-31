@@ -19,6 +19,25 @@ export function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
 }
 
+/**
+ * Live mask for the mobile-number field: formats as you type, so the field
+ * always reads (650) 949-0796 no matter how someone enters it.
+ *
+ * Formats only the digits actually present, which keeps backspace working —
+ * a mask that pins the punctuation in place traps people on the "(" and is
+ * exactly the kind of thing that loses this audience.
+ */
+export function formatPhoneInput(raw: string): string {
+  let d = digitsOnly(raw);
+  if (d.length > 10 && d.startsWith("1")) d = d.slice(1); // pasted +1…
+  d = d.slice(0, 10);
+
+  if (d.length === 0) return "";
+  if (d.length < 4) return `(${d}`;
+  if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 /** "6505550147" -> "(650) 555-0147". Anything unexpected is passed through. */
 export function formatPhone(value: string): string {
   const d = digitsOnly(value);

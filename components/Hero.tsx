@@ -1,4 +1,5 @@
 import { site } from "@/content/site";
+import { AddressLines } from "./AddressLines";
 import { PhoneIcon, PinIcon } from "./icons";
 
 export function Hero() {
@@ -9,10 +10,13 @@ export function Hero() {
 
         <p className="mt-4 max-w-2xl text-[1.3rem]">{site.tagline}</p>
 
-        <p className="mt-3 flex items-center gap-2 text-ink/75">
-          <PinIcon className="h-5 w-5 shrink-0 text-brass" />
-          {site.address.city}, {site.address.state}
-        </p>
+        {/* Address at the top of the page as well as the bottom — half the
+            people who land here are checking whether it's the salon they
+            already go to. */}
+        <address className="mt-4 flex gap-2 not-italic">
+          <PinIcon className="mt-1 h-5 w-5 shrink-0 text-brass" />
+          <AddressLines />
+        </address>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <a

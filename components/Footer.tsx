@@ -1,5 +1,6 @@
 import { site } from "@/content/site";
 import { formatDayHours } from "@/lib/hours";
+import { AddressLines } from "./AddressLines";
 import { MailIcon, PhoneIcon, PinIcon } from "./icons";
 
 export function Footer() {
@@ -39,11 +40,7 @@ export function Footer() {
             <h2 className="text-[1.125rem] font-semibold">Find us</h2>
             <address className="mt-3 flex gap-2 not-italic">
               <PinIcon className="mt-1 h-5 w-5 shrink-0" />
-              <span>
-                {site.address.street}
-                <br />
-                {site.address.city}, {site.address.state} {site.address.zip}
-              </span>
+              <AddressLines />
             </address>
           </div>
 

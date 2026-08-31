@@ -1,6 +1,7 @@
 import { site } from "@/content/site";
 import { formatDayHours } from "@/lib/hours";
 import { isPlaceholder } from "@/lib/placeholder";
+import { AddressLines } from "./AddressLines";
 import { PinIcon } from "./icons";
 
 export function HoursSection() {
@@ -55,9 +56,7 @@ export function HoursSection() {
             </h3>
 
             <address className="mt-3 not-italic">
-              {address.street}
-              <br />
-              {address.city}, {address.state} {address.zip}
+              <AddressLines />
             </address>
 
             {hasMapLink ? (
