@@ -39,6 +39,16 @@ npm run punchlist
 Prints every outstanding `PLACEHOLDER` and `VERIFY` — the list to take to Kim.
 
 ```bash
+npm test
+```
+
+Covers the scheduling maths in `lib/hours.ts` — timezone, lead time, the
+pre-close buffer, closed days, blackout dates — plus phone/email validation and
+the rate limiter. **Run this after changing the hours in `content/site.ts`**: it
+is the thing that catches a day being offered that Kim is closed, or a time
+being offered that has already passed.
+
+```bash
 npm run typecheck
 ```
 
@@ -282,13 +292,18 @@ None of these are bugs — they're judgment calls left open on purpose.
 3. Create the two inbox aliases (`book@`, `hello@`) and set
    `NOTIFY_BOOKING_EMAIL` / `NOTIFY_QUESTIONS_EMAIL`.
 4. Set `RESEND_API_KEY` and `RESEND_FROM`. Stub mode ends the moment the key is
-   present — submit one of each form and confirm both arrive.
+   present — submit one of each form and confirm both arrive. Send one with
+   "Email me back" selected too: that also sends the visitor a receipt, so check
+   it lands and doesn't come out looking like spam.
 5. Set `NEXT_PUBLIC_SITE_URL` to the real origin. It drives the canonical URL,
    Open Graph tags, `robots.txt` and `sitemap.xml`, all of which point at
    `localhost:3000` until you do.
 6. Deploy. Note `app/page.tsx` sets `revalidate = 900`, so the host needs to run
    it as a server, not a static export — the booking picker depends on the
-   current date.
+   current date. The rate limiter in `lib/rate-limit.ts` is in-memory, so on a
+   serverless host its five-per-hour cap is per instance rather than global —
+   fine for a one-chair salon, and the comment at the top of that file says what
+   to swap in if it ever isn't.
 7. Claim the Google Business Profile and point it at the new domain. That plus
    the `LocalBusiness` JSON-LD is what eventually outranks the Yelp page.
 8. **Test the phone link on a real handset.** The `tel:` href is correct but has
