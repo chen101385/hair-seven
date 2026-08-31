@@ -11,7 +11,10 @@ const lines = readFileSync(file, "utf8").split("\n");
 
 const hits = lines
   .map((text, index) => ({ line: index + 1, text: text.trim() }))
-  .filter(({ text }) => text.includes("PLACEHOLDER") || text.includes("VERIFY"));
+  .filter(({ text }) => text.includes("PLACEHOLDER") || text.includes("VERIFY"))
+  // Skip the file's own header comment, which explains what PLACEHOLDER means.
+  // Continuation lines of a /** */ block start with "*"; real items never do.
+  .filter(({ text }) => !text.startsWith("*"));
 
 if (hits.length === 0) {
   console.log("\n  Nothing outstanding in content/site.ts. Ship it.\n");

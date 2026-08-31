@@ -202,22 +202,101 @@ answer is to link out to Square Appointments or Booksy rather than build it.
 
 ---
 
-## Before showing Kim
+## Picking this up on another machine
 
-Run `npm run punchlist`. The things that still need a real answer from her:
+```bash
+git clone git@github.com:chen101385/hair-seven.git
+cd hair-seven
+npm install
+npm run dev
+```
 
-- Her exact service list, with honest price ranges
-- Her real hours, including any lunch break
-- **Which days she's actually closed.** Sunday and Monday are placeholders. A wrong closed day is the one error that costs her an actual appointment
-- The tagline, and the rest of her bio
-- The street address, ZIP, and a Google Maps link
-- The email address that should receive booking requests
-- Whether she's happy with both photos being public
+Needs Node 20.9+. Nothing else — no accounts, no API keys. The forms work in
+stub mode out of the box.
 
-Two decisions worth making now rather than later:
+Two things are **deliberately not in the repo**, so a fresh clone won't have
+them:
 
-1. **Whose name is the domain in?** It should be hers, or this becomes a
+- `.env.local` — copy `.env.local.example` to `.env.local` if you want to set
+  the notify addresses. Not needed for stub mode.
+- `.submissions.log` — created on the first form submission.
+
+If `npm install` fails with `EACCES ... /.npm/_cacache`, the npm cache has
+root-owned files from an old npm bug. Either fix it once with
+`sudo chown -R $(id -u):$(id -g) ~/.npm`, or work around it per-command:
+
+```bash
+npm_config_cache=/tmp/npm-cache npm install
+```
+
+---
+
+## What's left
+
+**Status:** the site is content-complete except for prices, and runs locally.
+Nothing is deployed and no domain is assigned yet.
+
+### 1. Still needs an answer from Kim
+
+`npm run punchlist` prints the authoritative list with line numbers — it greps
+the content file, so it can't go stale. This table is the human summary of the
+same thing:
+
+| Item | Where |
+| --- | --- |
+| **Prices.** Every service currently reads "Call for pricing." | `content/site.ts` → `services[].priceLow` / `priceHigh` |
+| What kinds of coloring she does — single process, highlights, grey coverage? | `services[]` → Hair coloring `description` |
+| The hours note — walk-ins welcome, or appointment only? | `hoursNote` |
+| A lunch break, if she takes one at a fixed time | `hours` — would need a second range per day, which the picker doesn't model yet |
+| The public contact email shown in the footer | `email` |
+| Which inbox should receive booking requests | `.env.local` → `NOTIFY_BOOKING_EMAIL` |
+| **Is she happy with both photos being public?** | `public/kim.jpg`, `public/kim-and-chris.jpg` |
+| A real logo or mark, if she has one | `app/favicon.ico`, `app/icon.svg` — both placeholders |
+
+> The photos are in this repo. It's private today, but if it ever goes public or
+> gains collaborators, they go with it. Worth asking her before that happens.
+
+### 2. Open decisions on the build
+
+None of these are bugs — they're judgment calls left open on purpose.
+
+- **"Call for pricing." appears on all four services.** Honest, and it'll thin
+  out once real prices land, but as a block it reads flat. The alternative is to
+  hide the per-service price while they're all unknown and let `pricingNote`
+  carry it.
+- **The Google Maps link is a search URL** built from the street address, not
+  her Google Business listing. It works; swap it for the real place link if she
+  claims the listing. `content/site.ts` → `address.mapsUrl`.
+- **You can only offer times on one day.** Multi-select replaced the old backup
+  day/time picker. Someone who's free "Tuesday or Thursday" has to use the
+  "I'm flexible" box. Adding an "Add another day" button back is straightforward
+  if it turns out to matter.
+
+### 3. Launch checklist, in order
+
+1. **Buy the domain in Kim's name, not yours.** Otherwise this becomes a
    permanent obligation you can't hand off.
-2. **Does she want her cell number published at all?** Some owners don't. If she
-   doesn't, the forms become the only inbound channel and the header number
-   points to the shop line instead.
+2. **Start Resend DNS verification the same day you buy the domain.** It won't
+   send from her domain until the records propagate — a day or two. This is the
+   step that bites people the night before launch.
+3. Create the two inbox aliases (`book@`, `hello@`) and set
+   `NOTIFY_BOOKING_EMAIL` / `NOTIFY_QUESTIONS_EMAIL`.
+4. Set `RESEND_API_KEY` and `RESEND_FROM`. Stub mode ends the moment the key is
+   present — submit one of each form and confirm both arrive.
+5. Set `NEXT_PUBLIC_SITE_URL` to the real origin. It drives the canonical URL,
+   Open Graph tags, `robots.txt` and `sitemap.xml`, all of which point at
+   `localhost:3000` until you do.
+6. Deploy. Note `app/page.tsx` sets `revalidate = 900`, so the host needs to run
+   it as a server, not a static export — the booking picker depends on the
+   current date.
+7. Claim the Google Business Profile and point it at the new domain. That plus
+   the `LocalBusiness` JSON-LD is what eventually outranks the Yelp page.
+8. **Test the phone link on a real handset.** The `tel:` href is correct but has
+   only ever been checked in a browser.
+
+### 4. Still worth asking
+
+**Does Kim want her cell number published at all?** Some owners don't. If she
+doesn't, the forms become the only inbound channel and the header number should
+point at the shop line instead. Everything reads from `site.phone` /
+`site.phoneHref`, so it's a one-line change either way.
