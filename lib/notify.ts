@@ -27,12 +27,14 @@ export type Mail = {
 };
 
 const LABEL_WIDTH = 12;
+/** The receipt's block is indented, so it uses a narrower column. */
+const RECEIPT_LABEL_WIDTH = 9;
 
-function row(label: string, value: string): string {
+function row(label: string, value: string, width = LABEL_WIDTH): string {
   // padEnd is a no-op once the label is longer than the column, which would
   // run the label straight into the value. Always keep at least one space.
   const key = `${label}:`;
-  return `${key.padEnd(LABEL_WIDTH)}${key.length >= LABEL_WIDTH ? " " : ""}${value}`;
+  return `${key.padEnd(width)}${key.length >= width ? " " : ""}${value}`;
 }
 
 /**
@@ -97,14 +99,116 @@ function requireEnv(key: string): string {
   return process.env[key]?.trim() || "(not configured)";
 }
 
+/**
+ * The receipt the visitor gets, so they have something in writing and aren't
+ * left wondering whether the form worked. Only possible when they chose to be
+ * emailed back — if they asked Kim to text them, we never collected an address,
+ * and the site does not send SMS.
+ *
+ * Replies land in Kim's inbox, not a no-reply void.
+ */
+export function buildVisitorReceipt(p: ContactPayload): Mail | null {
+  const to = p.email.trim();
+  if (!isUsableEmail(to)) return null;
+
+  const name = p.name.trim();
+  const where = `${site.name}\n${site.address.street}, ${site.address.place}\n${site.address.city}, ${site.address.state} ${site.address.zip}\n${site.phone}`;
+
+  if (p.formType === "appointment") {
+    const indent = (label: string, value: string) =>
+      `  ${row(label, value, RECEIPT_LABEL_WIDTH)}`;
+
+    const flexible = flexibleNote(p.primary);
+    const what = flexible
+      ? indent("Requested", flexible)
+      : [
+          indent("Day", describeDay(p.primary)),
+          indent(
+            p.primary.slots.length === 1 ? "Time" : "Times",
+            describeTimes(p.primary),
+          ),
+        ].join("\n");
+
+    return {
+      to,
+      subject: `We got your request — ${site.name}`,
+      replyTo: requireEnvOrNull("NOTIFY_BOOKING_EMAIL"),
+      body: [
+        `Hi ${name},`,
+        "",
+        `Thanks — Kim has your appointment request.`,
+        "",
+        `Nothing is booked yet. Kim keeps her appointment book by hand, so she'll`,
+        `check it and write back within ${site.booking.replyWindow} to confirm a time.`,
+        "",
+        `Here's what you sent:`,
+        "",
+        what,
+        p.service.trim() ? indent("Service", p.service.trim()) : null,
+        "",
+        `If you need her sooner, just call ${site.phone}.`,
+        "",
+        "—",
+        where,
+      ]
+        .filter((line): line is string => line !== null)
+        .join("\n"),
+    };
+  }
+
+  return {
+    to,
+    subject: `We got your message — ${site.name}`,
+    replyTo: requireEnvOrNull("NOTIFY_QUESTIONS_EMAIL"),
+    body: [
+      `Hi ${name},`,
+      "",
+      `Thanks — Kim has your question and usually replies within a day or two.`,
+      "",
+      `You asked:`,
+      "",
+      p.question.trim(),
+      "",
+      `If you need an answer sooner, just call ${site.phone}.`,
+      "",
+      "—",
+      where,
+    ].join("\n"),
+  };
+}
+
+function requireEnvOrNull(key: string): string | null {
+  return process.env[key]?.trim() || null;
+}
+
 export type DeliveryMode = "stub" | "sent";
 
+/** Kim's notification. Recorded to the log, and a failure fails the request. */
 export async function deliver(mail: Mail, payload: ContactPayload) {
   await recordSubmission(mail, payload);
+  return sendMail(mail, "email to Kim", true);
+}
 
+/**
+ * The visitor's receipt. Best-effort on purpose: Kim already has the request,
+ * so a failure here must never turn a successful booking into an error the
+ * visitor sees. It's logged and swallowed.
+ */
+export async function deliverReceipt(mail: Mail | null) {
+  if (!mail) return;
+  try {
+    // Not recorded: .submissions.log is Kim's record of what came in, and a
+    // receipt is a copy of what she already has.
+    await sendMail(mail, "receipt to the visitor", false);
+  } catch (error) {
+    console.error("[hair-seven] visitor receipt failed to send:", error);
+  }
+}
+
+async function sendMail(mail: Mail, label: string, recorded: boolean) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    printStub(mail);
+    printStub(mail, label, recorded);
     return "stub" as DeliveryMode;
   }
 
@@ -167,14 +271,14 @@ async function recordSubmission(mail: Mail, payload: ContactPayload) {
   }
 }
 
-function printStub(mail: Mail) {
+function printStub(mail: Mail, label: string, recorded: boolean) {
   const rule = "─".repeat(64);
   console.log(
     [
       "",
       rule,
       `  ${site.name.toUpperCase()} — STUB MODE (RESEND_API_KEY is not set)`,
-      "  Nothing was emailed. This is what would have gone out.",
+      `  Nothing was emailed. This is the ${label} that would have gone out.`,
       rule,
       row("To", mail.to),
       row("Subject", mail.subject),
@@ -182,7 +286,9 @@ function printStub(mail: Mail) {
       rule,
       mail.body.trimEnd(),
       rule,
-      "  Also appended to .submissions.log",
+      recorded
+        ? "  Also appended to .submissions.log"
+        : "  Not logged — .submissions.log records what came in, not replies.",
       rule,
       "",
     ].join("\n"),

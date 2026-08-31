@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { site } from "@/content/site";
 import { getAvailableDays } from "@/lib/hours";
-import { buildEmail, deliver } from "@/lib/notify";
+import { buildEmail, buildVisitorReceipt, deliver, deliverReceipt } from "@/lib/notify";
+import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 import { emptyPicker } from "@/lib/types";
 import type { ContactPayload, ContactResponse, PickerValue } from "@/lib/types";
 import { validateContact } from "@/lib/validate";
@@ -99,6 +101,18 @@ function fail(
 }
 
 export async function POST(request: Request) {
+  // Before anything expensive: cap how often one client can post.
+  const limit = checkRateLimit(clientKey(request));
+  if (!limit.ok) {
+    return NextResponse.json<ContactResponse>(
+      {
+        ok: false,
+        message: `You’ve already sent a few requests. Kim has them — please call ${site.phone} if you need her right away.`,
+      },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await request.json();
@@ -137,6 +151,9 @@ export async function POST(request: Request) {
   try {
     const mail = buildEmail(payload);
     await deliver(mail, payload);
+    // Best-effort, and only when they gave us an address. Kim already has the
+    // request by this point, so a failed receipt must not fail the submission.
+    await deliverReceipt(buildVisitorReceipt(payload));
   } catch (error) {
     console.error("[hair-seven] delivery failed:", error);
     return fail(
