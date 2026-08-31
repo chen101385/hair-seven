@@ -1,5 +1,6 @@
 import { site } from "@/content/site";
 import { formatDayHours } from "@/lib/hours";
+import { isPlaceholder } from "@/lib/placeholder";
 import { AddressLines } from "./AddressLines";
 import { MailIcon, PhoneIcon, PinIcon } from "./icons";
 
@@ -24,15 +25,20 @@ export function Footer() {
                   {site.phone}
                 </a>
               </li>
-              <li>
-                <a
-                  href={`mailto:${site.email}`}
-                  className="inline-flex min-h-12 items-center gap-2 break-all underline underline-offset-4"
-                >
-                  <MailIcon className="h-5 w-5 shrink-0" />
-                  {site.email}
-                </a>
-              </li>
+              {/* Same rule as the map link: a placeholder must never become a
+                  live mailto. Until Kim's real address is in, the phone and the
+                  forms are the contact channels. */}
+              {isPlaceholder(site.email) ? null : (
+                <li>
+                  <a
+                    href={`mailto:${site.email}`}
+                    className="inline-flex min-h-12 items-center gap-2 break-all underline underline-offset-4"
+                  >
+                    <MailIcon className="h-5 w-5 shrink-0" />
+                    {site.email}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
 
