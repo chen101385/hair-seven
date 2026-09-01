@@ -266,6 +266,11 @@ same thing:
 > The photos are in this repo. It's private today, but if it ever goes public or
 > gains collaborators, they go with it. Worth asking her before that happens.
 
+[`LAUNCH.md`](LAUNCH.md) Phase 0 has the rest of the list — including two that
+only surfaced from searching for her existing listings: **is the business
+"Hair 7" or "Kim's Hair 7"**, and **which hours are the real ones**, because
+Yelp and this site disagree.
+
 ### 2. Open decisions on the build
 
 None of these are bugs — they're judgment calls left open on purpose.
@@ -282,32 +287,24 @@ None of these are bugs — they're judgment calls left open on purpose.
   "I'm flexible" box. Adding an "Add another day" button back is straightforward
   if it turns out to matter.
 
-### 3. Launch checklist, in order
+### 3. Launch checklist
 
-1. **Buy the domain in Kim's name, not yours.** Otherwise this becomes a
-   permanent obligation you can't hand off.
-2. **Start Resend DNS verification the same day you buy the domain.** It won't
-   send from her domain until the records propagate — a day or two. This is the
-   step that bites people the night before launch.
-3. Create the two inbox aliases (`book@`, `hello@`) and set
-   `NOTIFY_BOOKING_EMAIL` / `NOTIFY_QUESTIONS_EMAIL`.
-4. Set `RESEND_API_KEY` and `RESEND_FROM`. Stub mode ends the moment the key is
-   present — submit one of each form and confirm both arrive. Send one with
-   "Email me back" selected too: that also sends the visitor a receipt, so check
-   it lands and doesn't come out looking like spam.
-5. Set `NEXT_PUBLIC_SITE_URL` to the real origin. It drives the canonical URL,
-   Open Graph tags, `robots.txt` and `sitemap.xml`, all of which point at
-   `localhost:3000` until you do.
-6. Deploy. Note `app/page.tsx` sets `revalidate = 900`, so the host needs to run
-   it as a server, not a static export — the booking picker depends on the
-   current date. The rate limiter in `lib/rate-limit.ts` is in-memory, so on a
-   serverless host its five-per-hour cap is per instance rather than global —
-   fine for a one-chair salon, and the comment at the top of that file says what
-   to swap in if it ever isn't.
-7. Claim the Google Business Profile and point it at the new domain. That plus
-   the `LocalBusiness` JSON-LD is what eventually outranks the Yelp page.
-8. **Test the phone link on a real handset.** The `tel:` href is correct but has
-   only ever been checked in a browser.
+Moved to **[`LAUNCH.md`](LAUNCH.md)** — the full path from here to "Kim's
+customers can find this by searching," including the domain and email setup,
+deploy, Google Business Profile, cleaning up her existing directory listings,
+and SEO. Short version of the order:
+
+1. Settle the open questions with Kim (§1 above, plus `LAUNCH.md` Phase 0)
+2. Domain and email — **both registered in her name**
+3. Deploy and verify
+4. Google Business Profile — the highest-value hour in the whole project
+5. Fix the conflicting third-party listings
+6. Search Console, then wait
+
+> `LAUNCH.md` also documents what a search currently turns up for Kim: six
+> directory listings using three different spellings of her name and three
+> different sets of hours. Sorting that out matters more than anything in this
+> repo.
 
 ### 4. Still worth asking
 
