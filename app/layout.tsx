@@ -22,7 +22,7 @@ const description = `${site.name} is a hair salon in ${site.address.city}, ${sit
 export const metadata: Metadata = {
   // PLACEHOLDER — set NEXT_PUBLIC_SITE_URL once the domain is assigned.
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000",
   ),
   title: `${site.name} — Hair Salon in ${site.address.city}, ${site.address.state}`,
   description,
