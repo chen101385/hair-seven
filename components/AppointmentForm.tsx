@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { site } from "@/content/site";
 import type { AvailableDay } from "@/lib/hours";
 import { describeDay, describeTimes } from "@/lib/hours";
+import { appointmentSmsRemaining } from "@/lib/sms";
 import { MAX_NOTES_LENGTH, type ContactPayload } from "@/lib/types";
 import { formatPhone } from "@/lib/validate";
 import { Confirmation } from "./Confirmation";
@@ -50,6 +51,8 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
   if (confirmed) return <AppointmentConfirmation values={confirmed} />;
 
   const sending = status === "sending";
+  const noteLimit = appointmentSmsRemaining(values);
+  const notesRemainingId = `${ID}-notes-remaining`;
 
   return (
     <form onSubmit={submit} noValidate className="relative space-y-6">
@@ -115,7 +118,7 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         id={`${ID}-notes`}
         label="Anything else she should know"
         optional
-        hint={`Specific timing notes or anything else Kim should know. ${MAX_NOTES_LENGTH} characters maximum.`}
+        hint="Optional timing notes. The request stays one text unless this note runs long."
       >
         <textarea
           id={`${ID}-notes`}
@@ -123,9 +126,22 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
           maxLength={MAX_NOTES_LENGTH}
           className="field-input"
           value={values.notes}
-          aria-describedby={describedBy(`${ID}-notes`, true, false)}
+          aria-describedby={describedBy(`${ID}-notes`, true, false, notesRemainingId)}
           onChange={(event) => set("notes", event.target.value)}
         />
+        <p
+          id={notesRemainingId}
+          aria-live="polite"
+          className="text-small text-ink/75 mt-2"
+        >
+          {noteLimit.secondText
+            ? `Second text · ${noteLimit.remaining} ${
+                noteLimit.remaining === 1 ? "character" : "characters"
+              } remaining`
+            : `${noteLimit.remaining} ${
+                noteLimit.remaining === 1 ? "character" : "characters"
+              } remaining`}
+        </p>
       </Field>
 
       <SubmitError message={submitError} />

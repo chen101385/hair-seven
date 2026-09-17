@@ -8,53 +8,14 @@
 
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
-import { site } from "@/content/site";
-import { describeDay, describeTimes } from "./hours";
+import { buildSms, smsSegmentCount, SMS_SEGMENT_LENGTH, type Sms } from "./sms";
 import type { ContactPayload } from "./types";
-import { formatPhone } from "./validate";
 
-export type Sms = {
-  to: string;
-  body: string;
-};
+export type { Sms } from "./sms";
+export { buildSms };
 
 function row(label: string, value: string): string {
   return `${label}: ${value}`;
-}
-
-export function buildSms(payload: ContactPayload): Sms {
-  const name = payload.name.trim();
-  const reply = `${payload.replyChannel === "call" ? "CALL" : "TEXT"} ${formatPhone(
-    payload.phone,
-  )}`;
-
-  if (payload.formType === "appointment") {
-    return {
-      to: notifyDestination(),
-      body: [
-        "HAIR 7 BOOKING REQUEST",
-        row("Name", name),
-        row("Reply", reply),
-        row("Day", describeDay(payload.primary)),
-        row("Windows", describeTimes(payload.primary)),
-        row("Service", payload.service.trim() || "Not sure yet"),
-        payload.notes.trim() ? row("Notes", payload.notes.trim()) : null,
-      ]
-        .filter((line): line is string => line !== null)
-        .join("\n"),
-    };
-  }
-
-  return {
-    to: notifyDestination(),
-    body: [
-      "HAIR 7 QUESTION",
-      row("Name", name),
-      row("Reply", reply),
-      "",
-      payload.question.trim(),
-    ].join("\n"),
-  };
 }
 
 export type DeliveryMode = "stub" | "sent";
@@ -104,15 +65,6 @@ async function sendSms(sms: Sms): Promise<DeliveryMode> {
   return "sent";
 }
 
-function env(key: string): string {
-  return process.env[key]?.trim() || "";
-}
-
-/** Kim's salon number unless NOTIFY_MOBILE_NUMBER is set. */
-function notifyDestination(): string {
-  return env("NOTIFY_MOBILE_NUMBER") || site.phoneHref;
-}
-
 async function recordSubmission(sms: Sms, payload: ContactPayload) {
   const entry = {
     receivedAt: new Date().toISOString(),
@@ -139,6 +91,8 @@ async function recordSubmission(sms: Sms, payload: ContactPayload) {
 }
 
 function printStub(sms: Sms) {
+  const length = sms.body.length;
+  const segments = smsSegmentCount(length);
   const rule = "─".repeat(64);
   console.log(
     [
@@ -149,6 +103,10 @@ function printStub(sms: Sms) {
       "  This is the text Kim would have received.",
       rule,
       row("To", sms.to || "(not configured)"),
+      row(
+        "Length",
+        `${length} characters (${segments} ${segments === 1 ? "text" : "texts"}; ${SMS_SEGMENT_LENGTH} is one text)`,
+      ),
       rule,
       sms.body,
       rule,
