@@ -36,6 +36,14 @@ npm run punchlist
 Prints every outstanding `PLACEHOLDER` and `VERIFY` — the list to take to Kim.
 
 ```bash
+npm run sms:preview
+```
+
+Prints the exact text Kim receives, with its character count and how many texts
+it costs. A booking with no note is one 160-character SMS; only a long note in
+"Anything else she should know" spills into a second text.
+
+```bash
 npm test
 ```
 
@@ -141,8 +149,10 @@ cp .env.local.example .env.local
 | `NOTIFY_MOBILE_NUMBER` | Already set to Kim's salon number, `+16509490796`. Change only if she wants texts elsewhere |
 | `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
 
-Leave the three Twilio values blank until you're ready. The site still runs in
-stub mode: the SMS is printed to the console for review, not sent. There are no
+Until **all three** Twilio values are set the site stays in stub mode: the SMS
+is printed to the dev-server console (with the names of the variables still
+unset) and appended to `.submissions.log`, and the visitor still gets a normal
+confirmation. A missing credential never fails someone's request. There are no
 email variables and none should be added — Kim does not receive form
 submissions by email.
 
