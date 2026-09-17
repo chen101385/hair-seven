@@ -79,9 +79,6 @@ of the content questions already in `README.md` § "Still needs an answer."
 - [ ] **Walk-ins, appointments, or both?** Every listing says walk-ins
       welcome. If that's still true, the site should say so prominently — it's
       a differentiator and it sets expectations for the booking form.
-- [ ] **Prices.** All four services currently read "Call for pricing." Real
-      numbers also switch on the `priceRange` field in the site's structured
-      data, which is a real search signal.
 - [ ] **Perms, threading, facials — does she still do these?** They're on her
       listings and not on the site.
 - [ ] **Is she happy with both photos being public?**
@@ -96,8 +93,8 @@ of the content questions already in `README.md` § "Still needs an answer."
 - [ ] **The Google Business Profile goes in her Google account.** Same reason,
       and it's harder to undo than the domain — profile ownership transfers are
       slow and sometimes fail. Add yourself as a Manager.
-- [ ] **The email aliases go on her domain**, forwarding to whatever she
-      already reads. She should not have to learn a new inbox.
+- [ ] **The Twilio account and number go in her name.** You can administer the
+      setup, but she should be able to recover billing and credentials herself.
 
 > Set this expectation early and plainly: you're building and running it, but
 > everything of value is registered to her. It costs nothing now and saves a
@@ -110,24 +107,14 @@ sign photo, an old flyer? The favicon and app icon are placeholders.
 
 ---
 
-## Phase 1 — Domain and email
+## Phase 1 — Domain and SMS notifications
 
 - [ ] **Buy the domain in Kim's name.** Something short and obvious —
       `hair7mv.com`, `kimshair7.com`. Match the name she picked in Phase 0.
       Avoid hyphens and avoid anything that has to be spelled out loud.
-- [ ] **Set up email on the domain.** Google Workspace (~$7/user/mo) or a
-      forwarding-only option if the registrar includes it. You need two
-      addresses:
-      - `book@` → booking requests
-      - `hello@` → general questions
-      Both can forward to one inbox she already reads. She never has to log in
-      anywhere new.
-- [ ] **Start Resend DNS verification the same day.** This is the step that
-      bites people the night before launch. Resend won't send from her domain
-      until SPF/DKIM records propagate — allow a day or two, sometimes more.
-      Do it before you need it.
-- [ ] Add the DNS records Resend gives you. Keep a note of what you changed;
-      if email breaks in six months this is the first place to look.
+- [ ] **Set up Twilio in Kim's name.** Buy an SMS-capable number and complete
+      the registration Twilio requires for application-to-person messaging.
+- [ ] Add Kim's mobile as the notification destination and send a test SMS.
 
 ---
 
@@ -137,12 +124,12 @@ sign photo, an old flyer? The favicon and app icon are placeholders.
       `revalidate = 900`, and the booking picker depends on the current date —
       a static export would freeze the available days. Vercel is the path of
       least resistance for Next.js and the free tier covers this traffic.
-- [ ] Set the environment variables (all four, `README.md` § "Turning on real
+- [ ] Set the environment variables (`README.md` § "Turning on real
       notifications" has the table):
       - `NEXT_PUBLIC_SITE_URL` — the real origin, e.g. `https://hair7mv.com`
-      - `NOTIFY_BOOKING_EMAIL` — `book@…`
-      - `NOTIFY_QUESTIONS_EMAIL` — `hello@…`
-      - `RESEND_API_KEY` and `RESEND_FROM`
+      - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`
+      - `TWILIO_FROM_NUMBER`
+      - `NOTIFY_MOBILE_NUMBER` — Kim's phone
 
 > **`NEXT_PUBLIC_SITE_URL` is load-bearing for SEO,** not just cosmetic. It
 > drives the canonical URL, the Open Graph tags, `robots.txt`, `sitemap.xml`,
@@ -170,10 +157,9 @@ Don't skip this. Everything downstream assumes the site is correct.
 - [ ] View source, find the `application/ld+json` block, paste it into
       [Google's Rich Results Test](https://search.google.com/test/rich-results).
       Zero errors. Confirm `url`, `telephone` and `address` are all populated.
-- [ ] **Submit one of each form and confirm both arrive** at the right inbox
-      with the right `[BOOKING]` / `[QUESTION]` prefix. Send one with "Email me
-      back" selected — that also sends the visitor a receipt. Check it lands in
-      the inbox and not in spam.
+- [ ] **Submit one of each form and confirm both arrive** on Kim's phone with
+      the right booking/question heading. Test both call-back and text-back
+      preferences.
 - [ ] **Test the phone link on a real handset.** The `tel:` href has only ever
       been checked in a browser.
 - [ ] Open it on an actual iPhone and an actual iPad. Tap through the booking
@@ -389,7 +375,7 @@ Small and regular beats a big push and then silence.
 - [ ] Check GBP for user-submitted "edits" to hours or address — Google lets
       strangers suggest changes and sometimes just applies them.
 - [ ] Reply to new reviews.
-- [ ] Check `book@` and `hello@` are still delivering. Send yourself a test.
+- [ ] Submit a test form and confirm the SMS still reaches Kim.
 
 **Quarterly, an hour**
 - [ ] Post something to GBP. Refresh a photo.
@@ -400,7 +386,7 @@ Small and regular beats a big push and then silence.
 
 **Annually**
 - [ ] Holiday hours on GBP — before the holidays, not after.
-- [ ] Confirm the domain and email are set to auto-renew and the card on file
+- [ ] Confirm the domain and Twilio number are set to auto-renew and the card on file
       hasn't expired. **This is the most common way a small business site
       silently dies.**
 - [ ] Re-read this file and check nothing has drifted.
@@ -428,7 +414,7 @@ Things that will be pitched to you, that aren't worth it here:
 | | |
 | --- | --- |
 | Talk to Kim, get answers | Phase 0 |
-| Domain, email, Resend DNS | 1–3 days (DNS propagation) |
+| Domain and Twilio setup | Registration and verification vary |
 | Deploy and verify | An afternoon |
 | GBP claim → verified | **1–14 days**, longer if video verification stalls |
 | Directory cleanup | 2–3 hours, spread out |

@@ -3,7 +3,7 @@
  *
  * The honeypot and the minimum time-on-page stop casual bots, but nothing
  * stopped someone hammering the endpoint — which means Kim's inbox floods and
- * the Resend bill climbs. This caps it.
+ * the SMS bill climbs. This caps it.
  *
  * Deliberately in-memory: no Redis, no extra service, nothing to pay for or
  * keep alive. The trade-off is that on a serverless host the counter is

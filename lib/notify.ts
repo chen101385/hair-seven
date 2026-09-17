@@ -1,155 +1,42 @@
 /**
- * Notification routing. Email only — this application never sends SMS.
+ * SMS notification routing.
  *
- * When a visitor picks "Text me", that is a preference recorded at the top of
- * the email. Kim reads it and texts them back herself, from her own phone, as a
- * normal person-to-person message. No Twilio, no carrier registration, no
- * per-message cost, no compliance surface.
+ * A submission texts Kim the request details through Twilio. Her reply to the
+ * visitor is always a normal call or person-to-person text from her own phone.
  */
 
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
-import { site } from "@/content/site";
-import {
-  describeDay,
-  describeSlotShort,
-  describeTimes,
-  flexibleNote,
-} from "./hours";
-import { formatPhone } from "./validate";
+import { describeDay, describeTimes } from "./hours";
 import type { ContactPayload } from "./types";
+import { formatPhone } from "./validate";
 
-export type Mail = {
+export type Sms = {
   to: string;
-  subject: string;
   body: string;
-  replyTo: string | null;
 };
 
-const LABEL_WIDTH = 12;
-/** The receipt's block is indented, so it uses a narrower column. */
-const RECEIPT_LABEL_WIDTH = 9;
-
-function row(label: string, value: string, width = LABEL_WIDTH): string {
-  // padEnd is a no-op once the label is longer than the column, which would
-  // run the label straight into the value. Always keep at least one space.
-  const key = `${label}:`;
-  return `${key.padEnd(width)}${key.length >= width ? " " : ""}${value}`;
+function row(label: string, value: string): string {
+  return `${label}: ${value}`;
 }
 
-/**
- * The whole point of the subject prefix is that Kim — or a Gmail filter — can
- * sort bookings from questions at a glance without opening anything.
- */
-export function buildEmail(p: ContactPayload): Mail {
-  const name = p.name.trim();
-  const byText = p.replyChannel === "text";
+export function buildSms(payload: ContactPayload): Sms {
+  const name = payload.name.trim();
+  const reply = `${payload.replyChannel === "call" ? "CALL" : "TEXT"} ${formatPhone(
+    payload.phone,
+  )}`;
 
-  // One channel, shown prominently, and not repeated further down.
-  const firstLine = byText
-    ? `TEXT HER AT ${formatPhone(p.phone)}`
-    : `EMAIL HER AT ${p.email.trim()}`;
-
-  // Reply-to only works if we actually have an email address for them.
-  const replyTo = isUsableEmail(p.email) ? p.email.trim() : null;
-
-  if (p.formType === "appointment") {
-    const subject = `[BOOKING] ${name} — ${describeSlotShort(p.primary)} — reply by ${
-      byText ? "Text" : "Email"
-    }`;
-
-    // Day and times on separate rows: Kim reads the day, then scans the list
-    // against her book. The times line is the one she acts on.
-    const flexible = flexibleNote(p.primary);
-    const lines = [
-      flexible ? row("Requested", flexible) : row("Day", describeDay(p.primary)),
-      flexible
-        ? null
-        : row(p.primary.slots.length === 1 ? "Time" : "Times", describeTimes(p.primary)),
-      row("Service", p.service.trim() || "Not sure yet"),
-      row("Name", name),
-      p.notes.trim() ? row("Notes", p.notes.trim()) : null,
-    ].filter((line): line is string => line !== null);
-
+  if (payload.formType === "appointment") {
     return {
-      to: requireEnv("NOTIFY_BOOKING_EMAIL"),
-      subject,
-      replyTo,
-      body: `${firstLine}\n\n${lines.join("\n")}\n`,
-    };
-  }
-
-  return {
-    to: requireEnv("NOTIFY_QUESTIONS_EMAIL"),
-    subject: `[QUESTION] ${name}`,
-    replyTo,
-    body: `${firstLine}\n\n${row("Name", name)}\n\nQuestion:\n${p.question.trim()}\n`,
-  };
-}
-
-function isUsableEmail(value: string): boolean {
-  return value.trim().length > 0 && value.includes("@");
-}
-
-/**
- * In stub mode there is no inbox, so an unset address is fine — it just shows up
- * in the console log as "(not configured)".
- */
-function requireEnv(key: string): string {
-  return process.env[key]?.trim() || "(not configured)";
-}
-
-/**
- * The receipt the visitor gets, so they have something in writing and aren't
- * left wondering whether the form worked. Only possible when they chose to be
- * emailed back — if they asked Kim to text them, we never collected an address,
- * and the site does not send SMS.
- *
- * Replies land in Kim's inbox, not a no-reply void.
- */
-export function buildVisitorReceipt(p: ContactPayload): Mail | null {
-  const to = p.email.trim();
-  if (!isUsableEmail(to)) return null;
-
-  const name = p.name.trim();
-  const where = `${site.name}\n${site.address.street}, ${site.address.place}\n${site.address.city}, ${site.address.state} ${site.address.zip}\n${site.phone}`;
-
-  if (p.formType === "appointment") {
-    const indent = (label: string, value: string) =>
-      `  ${row(label, value, RECEIPT_LABEL_WIDTH)}`;
-
-    const flexible = flexibleNote(p.primary);
-    const what = flexible
-      ? indent("Requested", flexible)
-      : [
-          indent("Day", describeDay(p.primary)),
-          indent(
-            p.primary.slots.length === 1 ? "Time" : "Times",
-            describeTimes(p.primary),
-          ),
-        ].join("\n");
-
-    return {
-      to,
-      subject: `We got your request — ${site.name}`,
-      replyTo: requireEnvOrNull("NOTIFY_BOOKING_EMAIL"),
+      to: env("NOTIFY_MOBILE_NUMBER"),
       body: [
-        `Hi ${name},`,
-        "",
-        `Thanks — Kim has your appointment request.`,
-        "",
-        `Nothing is booked yet. Kim keeps her appointment book by hand, so she'll`,
-        `check it and write back within ${site.booking.replyWindow} to confirm a time.`,
-        "",
-        `Here's what you sent:`,
-        "",
-        what,
-        p.service.trim() ? indent("Service", p.service.trim()) : null,
-        "",
-        `If you need her sooner, just call ${site.phone}.`,
-        "",
-        "—",
-        where,
+        "HAIR 7 BOOKING REQUEST",
+        row("Name", name),
+        row("Reply", reply),
+        row("Day", describeDay(payload.primary)),
+        row("Windows", describeTimes(payload.primary)),
+        row("Service", payload.service.trim() || "Not sure yet"),
+        payload.notes.trim() ? row("Notes", payload.notes.trim()) : null,
       ]
         .filter((line): line is string => line !== null)
         .join("\n"),
@@ -157,102 +44,75 @@ export function buildVisitorReceipt(p: ContactPayload): Mail | null {
   }
 
   return {
-    to,
-    subject: `We got your message — ${site.name}`,
-    replyTo: requireEnvOrNull("NOTIFY_QUESTIONS_EMAIL"),
+    to: env("NOTIFY_MOBILE_NUMBER"),
     body: [
-      `Hi ${name},`,
+      "HAIR 7 QUESTION",
+      row("Name", name),
+      row("Reply", reply),
       "",
-      `Thanks — Kim has your question and usually replies within a day or two.`,
-      "",
-      `You asked:`,
-      "",
-      p.question.trim(),
-      "",
-      `If you need an answer sooner, just call ${site.phone}.`,
-      "",
-      "—",
-      where,
+      payload.question.trim(),
     ].join("\n"),
   };
 }
 
-function requireEnvOrNull(key: string): string | null {
-  return process.env[key]?.trim() || null;
-}
-
 export type DeliveryMode = "stub" | "sent";
 
-/** Kim's notification. Recorded to the log, and a failure fails the request. */
-export async function deliver(mail: Mail, payload: ContactPayload) {
-  await recordSubmission(mail, payload);
-  return sendMail(mail, "email to Kim", true);
+/** Kim's notification. Recorded locally before the SMS is attempted. */
+export async function deliver(sms: Sms, payload: ContactPayload) {
+  await recordSubmission(sms, payload);
+  return sendSms(sms);
 }
 
-/**
- * The visitor's receipt. Best-effort on purpose: Kim already has the request,
- * so a failure here must never turn a successful booking into an error the
- * visitor sees. It's logged and swallowed.
- */
-export async function deliverReceipt(mail: Mail | null) {
-  if (!mail) return;
-  try {
-    // Not recorded: .submissions.log is Kim's record of what came in, and a
-    // receipt is a copy of what she already has.
-    await sendMail(mail, "receipt to the visitor", false);
-  } catch (error) {
-    console.error("[hair-seven] visitor receipt failed to send:", error);
-  }
-}
+async function sendSms(sms: Sms): Promise<DeliveryMode> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+  const from = process.env.TWILIO_FROM_NUMBER?.trim();
+  const configured = [accountSid, authToken, from, sms.to].filter(Boolean).length;
 
-async function sendMail(mail: Mail, label: string, recorded: boolean) {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    printStub(mail, label, recorded);
-    return "stub" as DeliveryMode;
+  if (configured === 0) {
+    printStub(sms);
+    return "stub";
+  }
+  if (!accountSid || !authToken || !from || !sms.to) {
+    throw new Error("Twilio SMS configuration is incomplete.");
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(
+      accountSid,
+    )}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString(
+          "base64",
+        )}`,
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body: new URLSearchParams({ To: sms.to, From: from, Body: sms.body }),
     },
-    body: JSON.stringify({
-      from: process.env.RESEND_FROM?.trim(),
-      to: [mail.to],
-      subject: mail.subject,
-      text: mail.body,
-      ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
-    }),
-  });
+  );
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(
-      `Resend returned ${response.status}: ${detail.slice(0, 500)}`,
-    );
+    throw new Error(`Twilio returned ${response.status}: ${detail.slice(0, 500)}`);
   }
 
-  return "sent" as DeliveryMode;
+  return "sent";
 }
 
-/**
- * Every submission is appended to .submissions.log regardless of mode, so the
- * whole flow can be demoed on a laptop with no accounts and no spend.
- * The file is gitignored.
- */
-async function recordSubmission(mail: Mail, payload: ContactPayload) {
+function env(key: string): string {
+  return process.env[key]?.trim() || "";
+}
+
+async function recordSubmission(sms: Sms, payload: ContactPayload) {
   const entry = {
     receivedAt: new Date().toISOString(),
     formType: payload.formType,
-    to: mail.to,
-    subject: mail.subject,
-    replyTo: mail.replyTo,
+    to: sms.to || null,
     replyChannel: payload.replyChannel,
     name: payload.name.trim(),
     phone: payload.phone.trim() || null,
-    email: payload.email.trim() || null,
     service: payload.service.trim() || null,
     primary: payload.primary,
     notes: payload.notes.trim() || null,
@@ -266,29 +126,24 @@ async function recordSubmission(mail: Mail, payload: ContactPayload) {
       "utf8",
     );
   } catch (error) {
-    // A logging failure must never cost Kim an appointment.
     console.error("[hair-seven] could not write .submissions.log:", error);
   }
 }
 
-function printStub(mail: Mail, label: string, recorded: boolean) {
+function printStub(sms: Sms) {
   const rule = "─".repeat(64);
   console.log(
     [
       "",
       rule,
-      `  ${site.name.toUpperCase()} — STUB MODE (RESEND_API_KEY is not set)`,
-      `  Nothing was emailed. This is the ${label} that would have gone out.`,
+      "  HAIR 7 — STUB MODE (Twilio is not configured)",
+      "  Nothing was texted. This is the SMS Kim would have received.",
       rule,
-      row("To", mail.to),
-      row("Subject", mail.subject),
-      row("Reply-To", mail.replyTo ?? "(none)"),
+      row("To", sms.to || "(not configured)"),
       rule,
-      mail.body.trimEnd(),
+      sms.body,
       rule,
-      recorded
-        ? "  Also appended to .submissions.log"
-        : "  Not logged — .submissions.log records what came in, not replies.",
+      "  Also appended to .submissions.log",
       rule,
       "",
     ].join("\n"),

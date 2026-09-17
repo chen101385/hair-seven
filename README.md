@@ -4,12 +4,7 @@ Marketing site for Hair 7, a single-owner hair salon in Mountain View, CA.
 It replaces a Yelp listing as the salon's primary web presence.
 
 One scrolling page. Two forms — an appointment request and a general question —
-that route to two different email addresses with different subject prefixes.
-
-**There is no outbound SMS.** Nothing in this application sends a text message.
-When a visitor picks "Text me," that is a preference recorded at the top of the
-email; Kim reads it and texts them back herself from her own phone. No Twilio,
-no carrier registration, no per-message cost, no compliance surface.
+that text Kim directly. Kim then calls or texts the visitor herself.
 
 ---
 
@@ -25,7 +20,7 @@ npm run dev
 
 Then open <http://localhost:3000>.
 
-No accounts, no API keys, and no spend are needed. With `RESEND_API_KEY` unset
+No accounts, no API keys, and no spend are needed. With Twilio unset
 the site runs in **stub mode**: both forms work end to end, and every submission
 is printed to the terminal in full and appended to `.submissions.log`. That file
 is gitignored — it holds real visitor details once the site is live.
@@ -42,8 +37,8 @@ Prints every outstanding `PLACEHOLDER` and `VERIFY` — the list to take to Kim.
 npm test
 ```
 
-Covers the scheduling maths in `lib/hours.ts` — timezone, lead time, the
-pre-close buffer, closed days, blackout dates — plus phone/email validation and
+Covers the scheduling maths in `lib/hours.ts` — timezone, lead time,
+availability windows, closed days, blackout dates — plus phone validation and
 the rate limiter. **Run this after changing the hours in `content/site.ts`**: it
 is the thing that catches a day being offered that Kim is closed, or a time
 being offered that has already passed.
@@ -78,26 +73,22 @@ directly.
 
 | Setting | What it does |
 | --- | --- |
-| `slotMinutes` | Interval between offered times (30) |
-| `lastSlotBufferMin` | Stops offering slots this long before close (60), so there's room for the appointment |
 | `leadTimeHours` | No requests sooner than this (12) |
 | `daysAhead` | How far out the day picker runs (21) |
 | `blackoutDates` | One-off closures: `["2026-11-26"]`. Vacations and holidays. Removes the day from the picker but leaves the weekly Hours table alone |
 | `replyWindow` | The "24 to 48 hours" promise, used in three places |
 
-With the current settings, a 10:00–18:00 day yields 15 slots (10:00 AM through
-5:00 PM) and Sunday's 10:00–17:00 yields 13 (through 4:00 PM).
+With the current hours, a 10:00–18:00 day yields three windows: 10–12, 12–3,
+and 3–6. Tuesday yields 12–3 and 3–6, and Monday is omitted because Kim is
+closed.
 
 **How the booking actually works.** Kim keeps her appointment book on paper, so
 the site never claims to hold a slot. A visitor picks **one day** and then taps
-**every time on it that would work for them** — several is the normal case. The
-email lists all of them, Kim checks her book, and she replies confirming
-whichever one she has. That is why there is no "backup time" field: picking four
-times on Thursday does the same job with one less thing to understand.
+**every broad time window that would work** — one, several, or all. The SMS
+lists them, Kim checks her book, and she calls or texts back with an exact time.
 
-**Prices.** `$45–$75` renders from `priceLow` / `priceHigh`. Set them to the
-same number for a single price. Set either to `null` and it renders
-"Call for pricing."
+**Prices.** The site lists every service without publishing individual prices.
+Kim discusses pricing directly with each customer.
 
 **Placeholders ship visible on purpose.** Nothing in this build guesses at a
 real price, address, or claim. Anything that would be *used* rather than *read*
@@ -141,22 +132,14 @@ cp .env.local.example .env.local
 
 | Variable | What it's for |
 | --- | --- |
-| `RESEND_API_KEY` | Leave blank for stub mode. Set it and email actually sends |
-| `RESEND_FROM` | The From address, on a domain verified in Resend |
-| `NOTIFY_BOOKING_EMAIL` | Where `[BOOKING]` emails go |
-| `NOTIFY_QUESTIONS_EMAIL` | Where `[QUESTION]` emails go |
+| `TWILIO_ACCOUNT_SID` | Twilio account identifier |
+| `TWILIO_AUTH_TOKEN` | Twilio API credential |
+| `TWILIO_FROM_NUMBER` | SMS-capable Twilio number in E.164 format |
+| `NOTIFY_MOBILE_NUMBER` | Kim's mobile number in E.164 format |
 | `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
 
-The two notify addresses can be two aliases on the same domain (`book@`,
-`hello@`) or two entirely different inboxes. They are never hardcoded.
-
-**The subject prefix is the whole point.** `[BOOKING]` and `[QUESTION]` let Kim
-— or a Gmail filter — sort bookings from questions at a glance without opening
-anything.
-
-> **Plan for DNS.** Resend requires domain verification before it will send from
-> the salon's domain. That's a day or two of propagation. Start it when you buy
-> the domain, not the night before launch.
+The SMS begins with either `HAIR 7 BOOKING REQUEST` or `HAIR 7 QUESTION`, so Kim
+can tell the two forms apart immediately.
 
 ---
 
@@ -166,7 +149,7 @@ anything.
 content/site.ts          All editable business content. The only file Chris edits.
 lib/hours.ts             Hours formatting + slot generation. Reads site.hours.
 lib/validate.ts          Validation shared by the browser and the API route.
-lib/notify.ts            Email composition, Resend delivery, stub mode.
+lib/notify.ts            SMS composition, Twilio delivery, stub mode.
 lib/placeholder.ts       Keeps placeholders out of links and structured data.
 app/page.tsx             The single page.
 app/api/contact/route.ts One endpoint, branching on formType.
@@ -194,9 +177,8 @@ about half would rather just call. That shapes the whole thing:
 - Spam control is a honeypot field plus a minimum time-on-page check. No CAPTCHA — a CAPTCHA locks out exactly the people this site exists for.
 
 Verified: zero `axe-core` violations (WCAG 2.1 A/AA plus best-practice) across
-the default, times-picked, error, flexible, question-tab, and confirmation
-states; visible focus ring at every keyboard stop; no horizontal scroll at 200%
-zoom.
+the default, times-picked, error, question-tab, and confirmation states; visible
+focus ring at every keyboard stop; no horizontal scroll at 200% zoom.
 
 Checked at 320, 375, 390, 768, 834, 1024 and 1440px — phone, iPad portrait and
 landscape, and desktop. At every one of them: no horizontal scroll, no tap
@@ -228,7 +210,7 @@ Two things are **deliberately not in the repo**, so a fresh clone won't have
 them:
 
 - `.env.local` — copy `.env.local.example` to `.env.local` if you want to set
-  the notify addresses. Not needed for stub mode.
+  up Twilio and Kim's notification number. Not needed for stub mode.
 - `.submissions.log` — created on the first form submission.
 
 If `npm install` fails with `EACCES ... /.npm/_cacache`, the npm cache has
@@ -243,7 +225,7 @@ npm_config_cache=/tmp/npm-cache npm install
 
 ## What's left
 
-**Status:** the site is content-complete except for prices, and runs locally.
+**Status:** the site runs locally and keeps pricing as a direct conversation.
 Nothing is deployed and no domain is assigned yet.
 
 ### 1. Still needs an answer from Kim
@@ -254,12 +236,10 @@ same thing:
 
 | Item | Where |
 | --- | --- |
-| **Prices.** Every service currently reads "Call for pricing." | `content/site.ts` → `services[].priceLow` / `priceHigh` |
 | What kinds of coloring she does — single process, highlights, grey coverage? | `services[]` → Hair coloring `description` |
 | The hours note — walk-ins welcome, or appointment only? | `hoursNote` |
 | A lunch break, if she takes one at a fixed time | `hours` — would need a second range per day, which the picker doesn't model yet |
-| The public contact email shown in the footer | `email` |
-| Which inbox should receive booking requests | `.env.local` → `NOTIFY_BOOKING_EMAIL` |
+| The mobile number that should receive form notifications | `.env.local` → `NOTIFY_MOBILE_NUMBER` |
 | **Is she happy with both photos being public?** | `public/kim.jpg`, `public/kim-and-chris.jpg` |
 | A real logo or mark, if she has one | `app/favicon.ico`, `app/icon.svg` — both placeholders |
 
@@ -275,27 +255,19 @@ Yelp and this site disagree.
 
 None of these are bugs — they're judgment calls left open on purpose.
 
-- **"Call for pricing." appears on all four services.** Honest, and it'll thin
-  out once real prices land, but as a block it reads flat. The alternative is to
-  hide the per-service price while they're all unknown and let `pricingNote`
-  carry it.
 - **The Google Maps link is a search URL** built from the street address, not
   her Google Business listing. It works; swap it for the real place link if she
   claims the listing. `content/site.ts` → `address.mapsUrl`.
-- **You can only offer times on one day.** Multi-select replaced the old backup
-  day/time picker. Someone who's free "Tuesday or Thursday" has to use the
-  "I'm flexible" box. Adding an "Add another day" button back is straightforward
-  if it turns out to matter.
 
 ### 3. Launch checklist
 
 Moved to **[`LAUNCH.md`](LAUNCH.md)** — the full path from here to "Kim's
-customers can find this by searching," including the domain and email setup,
+customers can find this by searching," including the domain and SMS setup,
 deploy, Google Business Profile, cleaning up her existing directory listings,
 and SEO. Short version of the order:
 
 1. Settle the open questions with Kim (§1 above, plus `LAUNCH.md` Phase 0)
-2. Domain and email — **both registered in her name**
+2. Domain and SMS notifications — **both registered in her name**
 3. Deploy and verify
 4. Google Business Profile — the highest-value hour in the whole project
 5. Fix the conflicting third-party listings

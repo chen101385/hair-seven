@@ -10,7 +10,7 @@ import { SubmitError } from "./SubmitError";
 import { emptyPayload, useContactForm } from "./useContactForm";
 
 const ID = "ask";
-const FIELD_ORDER = ["name", "replyChannel", "phone", "email", "question"];
+const FIELD_ORDER = ["name", "replyChannel", "phone", "question"];
 
 /** Deliberately short. No date picker, no service list. */
 export function QuestionForm() {
@@ -22,8 +22,6 @@ export function QuestionForm() {
         return `${ID}-channel-text`;
       case "phone":
         return `${ID}-phone`;
-      case "email":
-        return `${ID}-email`;
       case "question":
         return `${ID}-question`;
       default:
@@ -79,11 +77,9 @@ export function QuestionForm() {
         id={ID}
         channel={values.replyChannel}
         phone={values.phone}
-        email={values.email}
         errors={errors}
         onChannelChange={(next) => set("replyChannel", next)}
         onPhoneChange={(next) => set("phone", next)}
-        onEmailChange={(next) => set("email", next)}
         onBlurField={checkOnBlur}
       />
 
