@@ -7,7 +7,7 @@ import { emptyPicker, MAX_NOTES_LENGTH } from "@/lib/types";
 import type { ContactPayload, ContactResponse, PickerValue } from "@/lib/types";
 import { validateContact } from "@/lib/validate";
 
-/** node runtime: the stub writer appends to .submissions.log. */
+/** node runtime: SMS delivery (or stub print) and .submissions.log. */
 export const runtime = "nodejs";
 
 /** Minimum time on page, in ms. A human cannot fill this form in three seconds. */

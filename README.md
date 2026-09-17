@@ -4,7 +4,8 @@ Marketing site for Hair 7, a single-owner hair salon in Mountain View, CA.
 It replaces a Yelp listing as the salon's primary web presence.
 
 One scrolling page. Two forms — an appointment request and a general question —
-that text Kim directly. Kim then calls or texts the visitor herself.
+that text Kim directly. There is no email notification. Kim then calls or texts
+the visitor herself.
 
 ---
 
@@ -21,9 +22,10 @@ npm run dev
 Then open <http://localhost:3000>.
 
 No accounts, no API keys, and no spend are needed. With Twilio unset
-the site runs in **stub mode**: both forms work end to end, and every submission
-is printed to the terminal in full and appended to `.submissions.log`. That file
-is gitignored — it holds real visitor details once the site is live.
+the site runs in **stub mode**: both forms work end to end, every submission is
+printed to the terminal as the SMS Kim would have received, and a copy is
+appended to `.submissions.log`. Nothing is texted and nothing is emailed. That
+log file is gitignored — it holds real visitor details once the site is live.
 
 Other scripts:
 
@@ -140,7 +142,9 @@ cp .env.local.example .env.local
 | `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
 
 Leave the three Twilio values blank until you're ready. The site still runs in
-stub mode, and Kim's number is already the destination on every stub printout.
+stub mode: the SMS is printed to the console for review, not sent. There are no
+email variables and none should be added — Kim does not receive form
+submissions by email.
 
 A US Twilio number usually needs A2P 10DLC registration before it will deliver
 reliably to mobile phones. Start that in the Twilio console when you buy the

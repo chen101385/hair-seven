@@ -1,8 +1,9 @@
 /**
- * SMS notification routing.
+ * SMS notification routing. Form submissions never send email.
  *
- * A submission texts Kim the request details through Twilio. Her reply to the
- * visitor is always a normal call or person-to-person text from her own phone.
+ * Live: Twilio texts Kim the request. Stub (Twilio unset): the same SMS is
+ * printed to the console and logged. Kim then calls or texts the visitor
+ * herself from her own phone.
  */
 
 import { appendFile } from "node:fs/promises";
@@ -144,7 +145,8 @@ function printStub(sms: Sms) {
       "",
       rule,
       "  HAIR 7 — STUB MODE (Twilio is not configured)",
-      "  Nothing was texted. This is the SMS Kim would have received.",
+      "  SMS preview only. Nothing was texted or emailed.",
+      "  This is the text Kim would have received.",
       rule,
       row("To", sms.to || "(not configured)"),
       rule,

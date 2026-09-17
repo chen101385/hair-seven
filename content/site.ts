@@ -122,8 +122,9 @@ export const site = {
     },
   },
 
-  // Twilio credentials live in .env.local. Kim's number is the default
-  // destination (site.phoneHref) unless NOTIFY_MOBILE_NUMBER overrides it.
+  // Twilio credentials live in .env.local. Submissions text Kim; they are
+  // never emailed. Kim's number is the default destination (site.phoneHref)
+  // unless NOTIFY_MOBILE_NUMBER overrides it.
 } as const;
 
 export type Site = typeof site;
