@@ -11,7 +11,6 @@ import {
   weekdayIndex,
 } from "./hours";
 import type { ContactPayload, PickerValue } from "./types";
-import { MAX_NOTES_LENGTH } from "./types";
 import { formatPhone } from "./validate";
 
 export const SMS_SEGMENT_LENGTH = 160;
@@ -117,20 +116,6 @@ export function appointmentSmsBase(payload: ContactPayload): string {
   name = fit(name, Math.max(1, name.length - overflow));
   body = packAppointment(name, payload);
   return body.length <= SMS_SEGMENT_LENGTH ? body : body.slice(0, SMS_SEGMENT_LENGTH);
-}
-
-export function appointmentSmsRemaining(payload: ContactPayload): {
-  remaining: number;
-  secondText: boolean;
-} {
-  const full = buildSms(payload).body.length;
-  if (full <= SMS_SEGMENT_LENGTH) {
-    return { remaining: SMS_SEGMENT_LENGTH - full, secondText: false };
-  }
-  return {
-    remaining: Math.max(0, MAX_NOTES_LENGTH - payload.notes.length),
-    secondText: true,
-  };
 }
 
 export function buildSms(payload: ContactPayload): Sms {

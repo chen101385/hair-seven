@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  appointmentSmsBase,
-  appointmentSmsRemaining,
-  buildSms,
-  SMS_SEGMENT_LENGTH,
-  toGsm7,
-} from "./sms";
-import { emptyPicker, MAX_NOTES_LENGTH, type ContactPayload } from "./types";
+import { appointmentSmsBase, buildSms, SMS_SEGMENT_LENGTH, toGsm7 } from "./sms";
+import { emptyPicker, type ContactPayload } from "./types";
 
 const payload = (over: Partial<ContactPayload> = {}): ContactPayload => ({
   formType: "appointment",
@@ -58,15 +52,4 @@ describe("buildSms", () => {
     );
   });
 
-  it("counts remaining characters until a second text", () => {
-    const under = appointmentSmsRemaining(payload());
-    expect(under.secondText).toBe(false);
-    expect(under.remaining).toBe(SMS_SEGMENT_LENGTH - appointmentSmsBase(payload()).length);
-
-    const over = appointmentSmsRemaining(
-      payload({ notes: "x".repeat(MAX_NOTES_LENGTH) }),
-    );
-    expect(over.secondText).toBe(true);
-    expect(over.remaining).toBe(0);
-  });
 });

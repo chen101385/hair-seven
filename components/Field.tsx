@@ -58,16 +58,9 @@ export function FieldError({ id, error }: { id: string; error?: string }) {
 }
 
 /** aria wiring for an input that may have a hint and/or an error attached. */
-export function describedBy(
-  id: string,
-  hint: boolean,
-  error: boolean,
-  extra?: string,
-) {
-  const ids = [
-    hint ? `${id}-hint` : null,
-    extra ?? null,
-    error ? `${id}-error` : null,
-  ].filter(Boolean);
+export function describedBy(id: string, hint: boolean, error: boolean) {
+  const ids = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(
+    Boolean,
+  );
   return ids.length ? ids.join(" ") : undefined;
 }

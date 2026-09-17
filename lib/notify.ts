@@ -31,19 +31,24 @@ async function sendSms(sms: Sms): Promise<DeliveryMode> {
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
   const from = process.env.TWILIO_FROM_NUMBER?.trim();
 
-  // Kim's number can be known before Twilio is. Missing credentials stay in
-  // stub mode; a half-filled Twilio config is a real misconfiguration.
-  if (!accountSid && !authToken && !from) {
-    printStub(sms);
+  // Anything short of a complete Twilio config stays in stub mode and prints
+  // the message. A missing credential must never cost a visitor their request
+  // — it only means Kim reads it in the console instead of on her phone.
+  const missing = [
+    accountSid ? null : "TWILIO_ACCOUNT_SID",
+    authToken ? null : "TWILIO_AUTH_TOKEN",
+    from ? null : "TWILIO_FROM_NUMBER",
+    sms.to ? null : "NOTIFY_MOBILE_NUMBER",
+  ].filter((key): key is string => key !== null);
+
+  if (missing.length > 0) {
+    printStub(sms, missing);
     return "stub";
-  }
-  if (!accountSid || !authToken || !from || !sms.to) {
-    throw new Error("Twilio SMS configuration is incomplete.");
   }
 
   const response = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(
-      accountSid,
+      accountSid as string,
     )}/Messages.json`,
     {
       method: "POST",
@@ -53,7 +58,11 @@ async function sendSms(sms: Sms): Promise<DeliveryMode> {
         )}`,
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
       },
-      body: new URLSearchParams({ To: sms.to, From: from, Body: sms.body }),
+      body: new URLSearchParams({
+        To: sms.to,
+        From: from as string,
+        Body: sms.body,
+      }),
     },
   );
 
@@ -90,29 +99,32 @@ async function recordSubmission(sms: Sms, payload: ContactPayload) {
   }
 }
 
-function printStub(sms: Sms) {
+export function formatStub(sms: Sms, missing: string[] = []): string {
   const length = sms.body.length;
   const segments = smsSegmentCount(length);
   const rule = "─".repeat(64);
-  console.log(
-    [
-      "",
-      rule,
-      "  HAIR 7 — STUB MODE (Twilio is not configured)",
-      "  SMS preview only. Nothing was texted or emailed.",
-      "  This is the text Kim would have received.",
-      rule,
-      row("To", sms.to || "(not configured)"),
-      row(
-        "Length",
-        `${length} characters (${segments} ${segments === 1 ? "text" : "texts"}; ${SMS_SEGMENT_LENGTH} is one text)`,
-      ),
-      rule,
-      sms.body,
-      rule,
-      "  Also appended to .submissions.log",
-      rule,
-      "",
-    ].join("\n"),
-  );
+
+  return [
+    "",
+    rule,
+    "  HAIR 7 — STUB MODE. Nothing was texted or emailed.",
+    "  This is the text Kim would have received.",
+    missing.length > 0 ? `  Still unset: ${missing.join(", ")}` : null,
+    rule,
+    row("To", sms.to || "(not configured)"),
+    row(
+      "Length",
+      `${length} characters (${segments} ${segments === 1 ? "text" : "texts"}; ${SMS_SEGMENT_LENGTH} is one text)`,
+    ),
+    rule,
+    sms.body,
+    rule,
+    "",
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+}
+
+function printStub(sms: Sms, missing: string[]) {
+  console.log(formatStub(sms, missing));
 }
