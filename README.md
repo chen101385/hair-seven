@@ -124,19 +124,30 @@ node -e "const s=require('sharp');s('public/kim.jpg').jpeg({quality:82}).toBuffe
 
 ## Turning on real notifications
 
-Copy the template and fill it in:
+Copy the template and fill in the three values from the Twilio console
+(<https://console.twilio.com>):
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-| Variable | What it's for |
+| Variable | Where it comes from |
 | --- | --- |
-| `TWILIO_ACCOUNT_SID` | Twilio account identifier |
-| `TWILIO_AUTH_TOKEN` | Twilio API credential |
-| `TWILIO_FROM_NUMBER` | SMS-capable Twilio number in E.164 format |
-| `NOTIFY_MOBILE_NUMBER` | Kim's mobile number in E.164 format |
+| `TWILIO_ACCOUNT_SID` | Console home, Account Info. Starts with `AC` |
+| `TWILIO_AUTH_TOKEN` | Same panel. Click to reveal, then paste |
+| `TWILIO_FROM_NUMBER` | Phone Numbers → Active numbers, in E.164 (`+1…`). This is Twilio's sending number, not Kim's |
+| `NOTIFY_MOBILE_NUMBER` | Already set to Kim's salon number, `+16509490796`. Change only if she wants texts elsewhere |
 | `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
+
+Leave the three Twilio values blank until you're ready. The site still runs in
+stub mode, and Kim's number is already the destination on every stub printout.
+
+A US Twilio number usually needs A2P 10DLC registration before it will deliver
+reliably to mobile phones. Start that in the Twilio console when you buy the
+number — it can take a few days.
+
+Restart `npm run dev` after saving `.env.local`. On Vercel, add the same keys
+under Project Settings → Environment Variables.
 
 The SMS begins with either `HAIR 7 BOOKING REQUEST` or `HAIR 7 QUESTION`, so Kim
 can tell the two forms apart immediately.
@@ -236,10 +247,8 @@ same thing:
 
 | Item | Where |
 | --- | --- |
-| What kinds of coloring she does — single process, highlights, grey coverage? | `services[]` → Hair coloring `description` |
 | The hours note — walk-ins welcome, or appointment only? | `hoursNote` |
 | A lunch break, if she takes one at a fixed time | `hours` — would need a second range per day, which the picker doesn't model yet |
-| The mobile number that should receive form notifications | `.env.local` → `NOTIFY_MOBILE_NUMBER` |
 | **Is she happy with both photos being public?** | `public/kim.jpg`, `public/kim-and-chris.jpg` |
 | A real logo or mark, if she has one | `app/favicon.ico`, `app/icon.svg` — both placeholders |
 

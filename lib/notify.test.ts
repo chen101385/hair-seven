@@ -26,6 +26,7 @@ describe("buildSms", () => {
     expect(sms.body).toContain("Morning (10:00 AM–12:00 PM)");
     expect(sms.body).toContain("Early evening (3:00 PM–6:00 PM)");
     expect(sms.body).toContain("Notes: Late afternoon is easiest.");
+    expect(sms.to).toBe("+16509490796");
   });
 
   it("labels phone callbacks clearly", () => {

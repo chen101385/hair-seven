@@ -7,6 +7,7 @@
 
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
+import { site } from "@/content/site";
 import { describeDay, describeTimes } from "./hours";
 import type { ContactPayload } from "./types";
 import { formatPhone } from "./validate";
@@ -28,7 +29,7 @@ export function buildSms(payload: ContactPayload): Sms {
 
   if (payload.formType === "appointment") {
     return {
-      to: env("NOTIFY_MOBILE_NUMBER"),
+      to: notifyDestination(),
       body: [
         "HAIR 7 BOOKING REQUEST",
         row("Name", name),
@@ -44,7 +45,7 @@ export function buildSms(payload: ContactPayload): Sms {
   }
 
   return {
-    to: env("NOTIFY_MOBILE_NUMBER"),
+    to: notifyDestination(),
     body: [
       "HAIR 7 QUESTION",
       row("Name", name),
@@ -67,9 +68,10 @@ async function sendSms(sms: Sms): Promise<DeliveryMode> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
   const from = process.env.TWILIO_FROM_NUMBER?.trim();
-  const configured = [accountSid, authToken, from, sms.to].filter(Boolean).length;
 
-  if (configured === 0) {
+  // Kim's number can be known before Twilio is. Missing credentials stay in
+  // stub mode; a half-filled Twilio config is a real misconfiguration.
+  if (!accountSid && !authToken && !from) {
     printStub(sms);
     return "stub";
   }
@@ -103,6 +105,11 @@ async function sendSms(sms: Sms): Promise<DeliveryMode> {
 
 function env(key: string): string {
   return process.env[key]?.trim() || "";
+}
+
+/** Kim's salon number unless NOTIFY_MOBILE_NUMBER is set. */
+function notifyDestination(): string {
+  return env("NOTIFY_MOBILE_NUMBER") || site.phoneHref;
 }
 
 async function recordSubmission(sms: Sms, payload: ContactPayload) {

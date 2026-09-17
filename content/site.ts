@@ -72,7 +72,7 @@ export const site = {
     },
     {
       name: "Hair coloring",
-      description: "PLACEHOLDER — ask Kim what she offers: single process, highlights, grey coverage?",
+      description: "",
       note: "",
       items: [],
     },
@@ -122,8 +122,8 @@ export const site = {
     },
   },
 
-  // SMS delivery credentials and Kim's notification number live in .env.local.
-  // See the README.
+  // Twilio credentials live in .env.local. Kim's number is the default
+  // destination (site.phoneHref) unless NOTIFY_MOBILE_NUMBER overrides it.
 } as const;
 
 export type Site = typeof site;
