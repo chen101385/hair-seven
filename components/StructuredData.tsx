@@ -11,11 +11,6 @@ import { realOrUndefined } from "@/lib/placeholder";
  */
 export function StructuredData() {
   const { address } = site;
-  const prices = site.services.flatMap((service) =>
-    service.priceLow != null && service.priceHigh != null
-      ? [service.priceLow, service.priceHigh]
-      : [],
-  );
 
   const data = {
     "@context": "https://schema.org",
@@ -23,7 +18,6 @@ export function StructuredData() {
     name: site.name,
     description: realOrUndefined(site.tagline),
     telephone: site.phoneHref,
-    email: realOrUndefined(site.email),
     url: process.env.NEXT_PUBLIC_SITE_URL,
     hasMap: realOrUndefined(address.mapsUrl),
     address: {
@@ -35,9 +29,6 @@ export function StructuredData() {
       addressCountry: "US",
     },
     openingHoursSpecification: openingHoursSpecification(),
-    priceRange: prices.length
-      ? `$${Math.min(...prices)}–$${Math.max(...prices)}`
-      : undefined,
     makesOffer: site.services.map((service) => ({
       "@type": "Offer",
       itemOffered: { "@type": "Service", name: service.name },

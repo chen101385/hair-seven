@@ -6,15 +6,13 @@ import {
   describeSlot,
   describeSlotShort,
   describeTimes,
-  flexibleNote,
   formatDateLabel,
   formatDayHours,
   formatDayHoursCompact,
   formatFullDateLabel,
-  formatPrice,
   formatTime12,
   formatTimeCompact,
-  generateSlots,
+  generateAvailabilityWindows,
   getAvailableDays,
   openingHoursSpecification,
   parseHHMM,
@@ -35,8 +33,6 @@ import type { PickerValue } from "./types";
 const pick = (over: Partial<PickerValue> = {}): PickerValue => ({
   date: null,
   slots: [],
-  flexible: false,
-  flexibleText: "",
   ...over,
 });
 
@@ -120,26 +116,31 @@ describe("salonNow", () => {
   });
 });
 
-describe("generateSlots", () => {
-  it("stops the buffer short of closing so there's room for the appointment", () => {
-    const slots = generateSlots("10:00", "18:00", 30, 60);
-    expect(slots).toHaveLength(15);
-    expect(slots[0]).toBe(600); // 10:00 AM
-    expect(slots.at(-1)).toBe(1020); // 5:00 PM, not 6:00
+describe("generateAvailabilityWindows", () => {
+  it("splits a 10–6 day into three broad windows", () => {
+    const slots = generateAvailabilityWindows("10:00", "18:00");
+    expect(slots.map(({ start, end }) => [start, end])).toEqual([
+      [600, 720],
+      [720, 900],
+      [900, 1080],
+    ]);
+    expect(slots.map((slot) => slot.name)).toEqual([
+      "Morning",
+      "Early afternoon",
+      "Early evening",
+    ]);
   });
 
-  it("shortens with an earlier close — Sunday's 5pm gives 13 slots", () => {
-    const slots = generateSlots("10:00", "17:00", 30, 60);
-    expect(slots).toHaveLength(13);
-    expect(slots.at(-1)).toBe(960); // 4:00 PM
+  it("shortens the final window when the salon closes earlier", () => {
+    const slots = generateAvailabilityWindows("10:00", "17:00");
+    expect(slots).toHaveLength(3);
+    expect(slots.at(-1)).toMatchObject({ start: 900, end: 1020 });
   });
 
-  it("honours a different interval", () => {
-    expect(generateSlots("10:00", "12:00", 60, 0)).toEqual([600, 660, 720]);
-  });
-
-  it("returns nothing when the buffer swallows the whole day", () => {
-    expect(generateSlots("10:00", "11:00", 30, 120)).toEqual([]);
+  it("offers only afternoon windows on a noon–6 Tuesday", () => {
+    expect(
+      generateAvailabilityWindows("12:00", "18:00").map((slot) => slot.start),
+    ).toEqual([720, 900]);
   });
 });
 
@@ -152,19 +153,19 @@ describe("getAvailableDays", () => {
     // 10:00 + 12h lands at 22:00, past the last 17:00 slot.
     expect(days.map((d) => d.date)).not.toContain("2026-09-01");
     expect(days[0].date).toBe("2026-09-02");
-    expect(days[0].slots).toHaveLength(15);
+    expect(days[0].slots).toHaveLength(3);
   });
 
   it("keeps exactly the slots that clear the lead time", () => {
-    // 05:00 salon time + 12h = 17:00, so only the 5:00 PM slot survives today.
-    const days = getAvailableDays(new Date("2026-09-02T12:00:00Z"));
+    // 02:00 salon time + 12h = 14:00, so only the 3–6 window survives today.
+    const days = getAvailableDays(new Date("2026-09-02T09:00:00Z"));
     expect(days[0].date).toBe("2026-09-02");
-    expect(days[0].slots).toEqual([1020]);
+    expect(days[0].slots.map((slot) => slot.start)).toEqual([900]);
   });
 
   it("drops the day entirely once the last slot falls inside the lead time", () => {
-    // Half an hour later, 17:30, and nothing on the 2nd qualifies.
-    const days = getAvailableDays(new Date("2026-09-02T12:30:00Z"));
+    // 03:30 salon time + 12h lands after the final window starts.
+    const days = getAvailableDays(new Date("2026-09-02T10:30:00Z"));
     expect(days[0].date).toBe("2026-09-03");
   });
 
@@ -184,12 +185,12 @@ describe("getAvailableDays", () => {
     const wednesday = days.find((d) => d.weekdayLong === "Wednesday");
 
     // Sunday closes at 5, the rest at 6 — the picker must reflect that.
-    expect(sunday?.slots).toHaveLength(13);
-    expect(sunday?.slots.at(-1)).toBe(960); // 4:00 PM
+    expect(sunday?.slots).toHaveLength(3);
+    expect(sunday?.slots.at(-1)).toMatchObject({ start: 900, end: 1020 });
     expect(sunday?.hoursLabel).toBe("10am–5pm");
 
-    expect(wednesday?.slots).toHaveLength(15);
-    expect(wednesday?.slots.at(-1)).toBe(1020); // 5:00 PM
+    expect(wednesday?.slots).toHaveLength(3);
+    expect(wednesday?.slots.at(-1)).toMatchObject({ start: 900, end: 1080 });
   });
 
   it("stays inside the daysAhead window", () => {
@@ -218,39 +219,23 @@ describe("getAvailableDays", () => {
 
 describe("describing what was requested", () => {
   it("summarises a single time", () => {
-    const value = pick({ date: "2026-09-03", slots: [840] });
+    const value = pick({ date: "2026-09-03", slots: [720] });
     expect(describeDay(value)).toBe("Thursday, Sep 3");
-    expect(describeTimes(value)).toBe("2:00 PM");
-    expect(describeSlot(value)).toBe("Thursday, Sep 3 — 2:00 PM");
-    expect(describeSlotShort(value)).toBe("Thursday, Sep 3 2:00 PM");
+    expect(describeTimes(value)).toBe("Early afternoon (12:00 PM–3:00 PM)");
+    expect(describeSlot(value)).toBe(
+      "Thursday, Sep 3 — Early afternoon (12:00 PM–3:00 PM)",
+    );
+    expect(describeSlotShort(value)).toBe(
+      "Thursday, Sep 3 (Early afternoon (12:00 PM–3:00 PM))",
+    );
   });
 
-  it("lists every time, and counts them in the subject line", () => {
-    const value = pick({ date: "2026-09-03", slots: [600, 840, 930] });
-    expect(describeTimes(value)).toBe("10:00 AM, 2:00 PM, 3:30 PM");
-    expect(describeSlotShort(value)).toBe("Thursday, Sep 3 (3 times)");
-  });
-
-  it("passes on the visitor's own words when they're flexible", () => {
-    const value = pick({ flexible: true, flexibleText: "mornings next week" });
-    expect(flexibleNote(value)).toBe("Flexible — mornings next week");
-    expect(describeSlot(value)).toBe("Flexible — mornings next week");
-    expect(describeSlotShort(value)).toBe("Flexible");
-  });
-
-  it("still reads sensibly when flexible with nothing typed", () => {
-    const value = pick({ flexible: true });
-    expect(describeSlot(value)).toBe("Flexible — no preference given");
-  });
-});
-
-describe("formatPrice", () => {
-  it("renders a range, a single price, or an honest fallback", () => {
-    expect(formatPrice(45, 75)).toBe("$45–$75");
-    expect(formatPrice(60, 60)).toBe("$60");
-    expect(formatPrice(null, null)).toBe("Call for pricing.");
-    expect(formatPrice(null, 50)).toBe("Call for pricing.");
-    expect(formatPrice(50, null)).toBe("Call for pricing.");
+  it("lists every selected window and counts them in the short form", () => {
+    const value = pick({ date: "2026-09-03", slots: [600, 720, 900] });
+    expect(describeTimes(value)).toBe(
+      "Morning (10:00 AM–12:00 PM), Early afternoon (12:00 PM–3:00 PM), Early evening (3:00 PM–6:00 PM)",
+    );
+    expect(describeSlotShort(value)).toBe("Thursday, Sep 3 (3 windows)");
   });
 });
 

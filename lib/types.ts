@@ -1,27 +1,24 @@
 export type FormType = "appointment" | "question";
-export type ReplyChannel = "text" | "email";
+export type ReplyChannel = "call" | "text";
+
+export const MAX_NOTES_LENGTH = 200;
+export const MAX_QUESTION_LENGTH = 200;
 
 /**
- * What the day/time picker holds: one day, and every time on it that works for
+ * What the day/time picker holds: one day, and every window on it that works for
  * the visitor. Kim keeps her appointment book on paper, so she reads the list
  * and confirms whichever one she actually has free.
  */
 export type PickerValue = {
   /** "2026-09-18" */
   date: string | null;
-  /** Minutes past midnight, ascending. e.g. [600, 840] for 10:00 AM and 2:00 PM */
+  /** Window start times, in minutes past midnight and ascending. */
   slots: number[];
-  /** "I'm flexible / none of these work" */
-  flexible: boolean;
-  /** Free text shown when flexible is on */
-  flexibleText: string;
 };
 
 export const emptyPicker: PickerValue = {
   date: null,
   slots: [],
-  flexible: false,
-  flexibleText: "",
 };
 
 export type ContactPayload = {
@@ -29,10 +26,9 @@ export type ContactPayload = {
   name: string;
   replyChannel: ReplyChannel | null;
   phone: string;
-  email: string;
 
   // Appointment only
-  service: string;
+  services: string[];
   primary: PickerValue;
   notes: string;
 

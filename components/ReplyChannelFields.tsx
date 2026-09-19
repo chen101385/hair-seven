@@ -3,39 +3,34 @@
 import type { ReplyChannel } from "@/lib/types";
 import { formatPhoneInput } from "@/lib/validate";
 import { Field, FieldError, describedBy } from "./Field";
-import { ChatIcon, MailIcon } from "./icons";
+import { ChatIcon, PhoneIcon } from "./icons";
 
 /**
- * The reply-channel choice reveals exactly one contact field. Don't show both
- * and don't ask for both — halving the fields halves the abandonment for this
- * audience.
+ * Kim handles every follow-up herself by phone, so both choices share one
+ * mobile-number field.
  */
 export function ReplyChannelFields({
   id,
   channel,
   phone,
-  email,
   errors,
   onChannelChange,
   onPhoneChange,
-  onEmailChange,
   onBlurField,
 }: {
   id: string;
   channel: ReplyChannel | null;
   phone: string;
-  email: string;
   errors: Record<string, string>;
   onChannelChange: (next: ReplyChannel) => void;
   onPhoneChange: (next: string) => void;
-  onEmailChange: (next: string) => void;
-  onBlurField: (field: "phone" | "email") => void;
+  onBlurField: (field: "phone") => void;
 }) {
   return (
     <div className="space-y-5">
       <fieldset>
         <legend className="mb-2 font-semibold">
-          How should Kim get back to you?
+          How should Kim contact you?
         </legend>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -51,23 +46,23 @@ export function ReplyChannelFields({
             detail="Kim will text you back herself from her own phone. You won’t get automated messages."
           />
           <ChannelCard
-            id={`${id}-channel-email`}
+            id={`${id}-channel-call`}
             name={`${id}-channel`}
-            checked={channel === "email"}
-            onSelect={() => onChannelChange("email")}
-            icon={<MailIcon />}
-            title="Email me"
-            detail="Kim will write back herself from her own email. No mailing list, ever."
+            checked={channel === "call"}
+            onSelect={() => onChannelChange("call")}
+            icon={<PhoneIcon />}
+            title="Call me"
+            detail="Kim will call you herself after checking her appointment book."
           />
         </div>
 
         <FieldError id={`${id}-replyChannel`} error={errors.replyChannel} />
       </fieldset>
 
-      {channel === "text" ? (
+      {channel ? (
         <Field
           id={`${id}-phone`}
-          label="Your mobile number"
+          label={channel === "text" ? "Your mobile number" : "Your phone number"}
           error={errors.phone}
         >
           <input
@@ -88,24 +83,6 @@ export function ReplyChannelFields({
         </Field>
       ) : null}
 
-      {channel === "email" ? (
-        <Field id={`${id}-email`} label="Your email" error={errors.email}>
-          <input
-            id={`${id}-email`}
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            className="field-input"
-            value={email}
-            aria-invalid={errors.email ? true : undefined}
-            aria-describedby={describedBy(`${id}-email`, false, Boolean(errors.email))}
-            onChange={(event) => onEmailChange(event.target.value)}
-            // Checked when they leave the field, not only at submit.
-            onBlur={() => onBlurField("email")}
-          />
-        </Field>
-      ) : null}
     </div>
   );
 }

@@ -15,10 +15,6 @@ export function isPhone(value: string): boolean {
   return d.length === 10 || (d.length === 11 && d.startsWith("1"));
 }
 
-export function isEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
-}
-
 /**
  * Live mask for the mobile-number field: formats as you type, so the field
  * always reads (650) 949-0796 no matter how someone enters it.
@@ -54,25 +50,23 @@ export function validateContact(p: ContactPayload): Record<string, string> {
     errors.name = "Please enter your name so Kim knows who's asking.";
   }
 
-  if (p.replyChannel !== "text" && p.replyChannel !== "email") {
+  if (p.replyChannel !== "text" && p.replyChannel !== "call") {
     errors.replyChannel =
-      "Please choose whether Kim should text you or email you back.";
+      "Please choose whether Kim should text or call you back.";
   }
 
-  if (p.replyChannel === "text" && !isPhone(p.phone)) {
-    errors.phone = "Please enter a mobile number so Kim can text you back.";
+  if (p.replyChannel && !isPhone(p.phone)) {
+    errors.phone =
+      p.replyChannel === "text"
+        ? "Please enter a mobile number so Kim can text you back."
+        : "Please enter a phone number so Kim can call you back.";
   }
 
-  if (p.replyChannel === "email" && !isEmail(p.email)) {
-    errors.email = "Please enter an email address so Kim can write back.";
-  }
-
-  if (p.formType === "appointment" && !p.primary.flexible) {
+  if (p.formType === "appointment") {
     if (!p.primary.date) {
-      errors.primary = "Please pick a day, or choose “I’m flexible” below.";
+      errors.primary = "Please pick a day.";
     } else if (p.primary.slots.length === 0) {
-      errors.primary =
-        "Please tap at least one time that works for you, or choose “I’m flexible” below.";
+      errors.primary = "Please choose at least one time window that works for you.";
     }
   }
 

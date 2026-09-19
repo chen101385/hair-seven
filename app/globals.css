@@ -257,9 +257,9 @@ select.field-input {
 /* ---------------------------------------------------------------------------
    Choice controls: day cards, time slots, reply-channel cards.
 
-   Each is a real <input type="radio"> visually hidden behind a styled <label>.
-   That buys arrow-key navigation, "3 of 15" announcements, and native form
-   semantics for free — none of which a div-with-onClick gives you.
+   Each is a real radio or checkbox visually hidden behind a styled <label>.
+   That buys keyboard navigation and native form semantics for free — none of
+   which a div-with-onClick gives you.
    --------------------------------------------------------------------------- */
 .choice {
   position: relative;
@@ -321,11 +321,16 @@ select.field-input {
   padding: 0.75rem 0.625rem;
 }
 
-/* Step 2 — time slots. 56px tall minimum, 12px gaps come from the grid. */
+/* Step 2 — broad availability windows. */
 .choice-time {
-  min-height: 3.5rem;
+  min-height: 4.5rem;
   font-size: 1.1875rem;
-  white-space: nowrap;
+}
+
+.choice-service {
+  min-height: 3.5rem;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 /* Reply channel. Larger, with room for the explanatory line underneath. */
