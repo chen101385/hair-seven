@@ -33,7 +33,7 @@ describe("buildSms", () => {
     );
 
     expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
-    expect(sms.body).toContain("Hair7 book");
+    expect(sms.body).toContain("Hair7 BOOK");
     expect(sms.body).toContain("T (650) 555-0147");
     expect(sms.body).toContain("Thu Sep 3");
     expect(sms.body).toContain("10a-12p");
@@ -73,4 +73,22 @@ describe("buildSms", () => {
     expect(sms.body.endsWith("x".repeat(MAX_NOTES_LENGTH))).toBe(true);
   });
 
+  it("caps a long name with an ellipsis so the SMS stays at 306 characters", () => {
+    const name =
+      "Christopher Chen with the longest possible family name recorded at the salon desk today";
+    const sms = buildSms(
+      payload({
+        name,
+        services: ["Haircut", "Hair styling", "Hair coloring", "Waxing"],
+        primary: { date: "2026-09-03", slots: [600, 720, 900] },
+        notes: "x".repeat(187),
+      }),
+    );
+    const nameLine = sms.body.split("\n")[1];
+
+    expect(sms.body.startsWith("Hair7 BOOK\n")).toBe(true);
+    expect(sms.body).toHaveLength(SMS_MAX_LENGTH);
+    expect(nameLine).toBe("Christopher Chen with the long...");
+    expect(sms.body.endsWith("x".repeat(187))).toBe(true);
+  });
 });

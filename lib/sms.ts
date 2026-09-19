@@ -111,7 +111,7 @@ function packAppointment(name: string, payload: ContactPayload): string {
   const day = payload.primary.date ? formatSmsDate(payload.primary.date) : "-";
 
   return [
-    "Hair7 book",
+    "Hair7 BOOK",
     name,
     reply,
     day,
@@ -125,14 +125,21 @@ export function appointmentSmsBase(
   payload: ContactPayload,
   maxLength: number = SMS_SEGMENT_LENGTH,
 ): string {
-  let name = toGsm7(payload.name.trim());
-  let body = packAppointment(name, payload);
+  const fullName = toGsm7(payload.name.trim()) || "?";
+  let body = packAppointment(fullName, payload);
   if (body.length <= maxLength) return body;
 
-  const overflow = body.length - maxLength;
-  name = fit(name, Math.max(1, name.length - overflow));
+  // Always shorten the original name with a trailing "..." — never slice the
+  // packed message, which could cut a word in half with no ellipsis.
+  let allowed = Math.max(4, fullName.length - (body.length - maxLength));
+  let name = fit(fullName, allowed);
   body = packAppointment(name, payload);
-  return body.length <= maxLength ? body : body.slice(0, maxLength);
+  while (body.length > maxLength && allowed > 4) {
+    allowed -= 1;
+    name = fit(fullName, allowed);
+    body = packAppointment(name, payload);
+  }
+  return body;
 }
 
 export function buildSms(payload: ContactPayload): Sms {
