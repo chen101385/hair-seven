@@ -10,6 +10,7 @@ import { Confirmation } from "./Confirmation";
 import { DayTimePicker } from "./DayTimePicker";
 import { Field, describedBy } from "./Field";
 import { Honeypot } from "./Honeypot";
+import { CheckIcon } from "./icons";
 import { ReplyChannelFields } from "./ReplyChannelFields";
 import { SubmitError } from "./SubmitError";
 import { emptyPayload, useContactForm } from "./useContactForm";
@@ -51,6 +52,12 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
 
   const sending = status === "sending";
   const notesRemaining = MAX_NOTES_LENGTH - values.notes.length;
+  const toggleService = (service: string) => {
+    const services = values.services.includes(service)
+      ? values.services.filter((selected) => selected !== service)
+      : [...values.services, service];
+    set("services", services);
+  };
 
   return (
     <form onSubmit={submit} noValidate className="relative space-y-6">
@@ -69,21 +76,38 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         />
       </Field>
 
-      <Field id={`${ID}-service`} label="Service you’d like" optional>
-        <select
-          id={`${ID}-service`}
-          className="field-input"
-          value={values.service}
-          onChange={(event) => set("service", event.target.value)}
+      <fieldset>
+        <legend className="font-semibold">
+          Services you’d like{" "}
+          <span className="font-normal text-ink/75">(optional)</span>
+        </legend>
+        <p id={`${ID}-services-hint`} className="text-small text-ink/75 mt-1 mb-2">
+          Choose as many as you need, or leave this blank if you’re not sure.
+        </p>
+        <div
+          className="grid gap-3 sm:grid-cols-2"
+          aria-describedby={`${ID}-services-hint`}
         >
-          <option value="">Not sure yet</option>
           {site.services.map((service) => (
-            <option key={service.name} value={service.name}>
-              {service.name}
-            </option>
+            <div key={service.name} className="relative">
+              <input
+                type="checkbox"
+                id={`${ID}-service-${service.name.replaceAll(" ", "-")}`}
+                className="choice-input sr-only"
+                checked={values.services.includes(service.name)}
+                onChange={() => toggleService(service.name)}
+              />
+              <label
+                htmlFor={`${ID}-service-${service.name.replaceAll(" ", "-")}`}
+                className="choice choice-service"
+              >
+                <CheckIcon className="choice-check h-4 w-4" />
+                {service.name}
+              </label>
+            </div>
           ))}
-        </select>
-      </Field>
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend className="font-semibold">Day and time</legend>

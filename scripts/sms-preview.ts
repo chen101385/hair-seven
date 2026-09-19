@@ -18,7 +18,7 @@ const base: ContactPayload = {
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
-  service: "Haircut",
+  services: ["Haircut", "Hair coloring"],
   primary: {
     ...emptyPicker,
     date: day?.date ?? addDays(salonNow().date, 1),

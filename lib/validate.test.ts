@@ -14,7 +14,7 @@ const payload = (over: Partial<ContactPayload> = {}): ContactPayload => ({
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
-  service: "Haircut",
+  services: ["Haircut"],
   primary: { ...emptyPicker, date: "2026-09-03", slots: [840] },
   notes: "",
   question: "",

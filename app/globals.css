@@ -327,6 +327,12 @@ select.field-input {
   font-size: 1.1875rem;
 }
 
+.choice-service {
+  min-height: 3.5rem;
+  justify-content: flex-start;
+  text-align: left;
+}
+
 /* Reply channel. Larger, with room for the explanatory line underneath. */
 .choice-channel {
   flex-direction: column;

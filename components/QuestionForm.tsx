@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { site } from "@/content/site";
+import { MAX_QUESTION_LENGTH } from "@/lib/types";
 import { Confirmation } from "./Confirmation";
 import { Field, describedBy } from "./Field";
 import { Honeypot } from "./Honeypot";
@@ -87,6 +88,7 @@ export function QuestionForm() {
         <textarea
           id={`${ID}-question`}
           rows={4}
+          maxLength={MAX_QUESTION_LENGTH}
           className="field-input"
           value={values.question}
           aria-invalid={errors.question ? true : undefined}

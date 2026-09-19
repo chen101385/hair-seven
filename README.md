@@ -40,8 +40,9 @@ npm run sms:preview
 ```
 
 Prints the exact text Kim receives, with its character count and how many texts
-it costs. A booking with no note is one 160-character SMS; only a long note in
-"Anything else she should know" spills into a second text.
+it costs. A booking with no note is one 160-character SMS. Notes are limited to
+200 characters, and the complete booking is capped at 306 GSM-7 characters:
+never more than two concatenated texts.
 
 ```bash
 npm test
@@ -93,9 +94,10 @@ and 3–6. Tuesday yields 12–3 and 3–6, and Monday is omitted because Kim is
 closed.
 
 **How the booking actually works.** Kim keeps her appointment book on paper, so
-the site never claims to hold a slot. A visitor picks **one day** and then taps
-**every broad time window that would work** — one, several, or all. The SMS
-lists them, Kim checks her book, and she calls or texts back with an exact time.
+the site never claims to hold a slot. A visitor can check **multiple services**,
+picks **one day**, and then taps **every broad time window that would work** —
+one, several, or all. The SMS lists them, Kim checks her book, and she calls or
+texts back with an exact time.
 
 **Prices.** The site lists every service without publishing individual prices.
 Kim discusses pricing directly with each customer.

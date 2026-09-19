@@ -1,7 +1,8 @@
 export type FormType = "appointment" | "question";
 export type ReplyChannel = "call" | "text";
 
-export const MAX_NOTES_LENGTH = 240;
+export const MAX_NOTES_LENGTH = 200;
+export const MAX_QUESTION_LENGTH = 200;
 
 /**
  * What the day/time picker holds: one day, and every window on it that works for
@@ -27,7 +28,7 @@ export type ContactPayload = {
   phone: string;
 
   // Appointment only
-  service: string;
+  services: string[];
   primary: PickerValue;
   notes: string;
 

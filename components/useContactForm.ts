@@ -153,7 +153,7 @@ export function emptyPayload(
     name: "",
     replyChannel: null,
     phone: "",
-    service: "",
+    services: [],
     primary: { date: null, slots: [] },
     notes: "",
     question: "",

@@ -82,7 +82,7 @@ async function recordSubmission(sms: Sms, payload: ContactPayload) {
     replyChannel: payload.replyChannel,
     name: payload.name.trim(),
     phone: payload.phone.trim() || null,
-    service: payload.service.trim() || null,
+    services: payload.services.length > 0 ? payload.services : null,
     primary: payload.primary,
     notes: payload.notes.trim() || null,
     question: payload.question.trim() || null,

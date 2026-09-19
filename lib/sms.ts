@@ -1,7 +1,7 @@
 /**
  * The text Kim actually receives. Kept on GSM-7 so a booking without notes
- * stays one 160-character SMS. Notes are the only field that may start a
- * second segment.
+ * stays one 160-character SMS. A booking is hard-capped at two concatenated
+ * GSM-7 segments (306 characters), including notes.
  */
 
 import { site } from "@/content/site";
@@ -16,6 +16,7 @@ import { formatPhone } from "./validate";
 export const SMS_SEGMENT_LENGTH = 160;
 /** Concatenated GSM-7 segments use 153 characters each after the first. */
 export const SMS_CONCAT_LENGTH = 153;
+export const SMS_MAX_LENGTH = SMS_CONCAT_LENGTH * 2;
 
 export type Sms = {
   to: string;
@@ -89,12 +90,25 @@ function fit(text: string, max: number): string {
   return `${clean.slice(0, max - 3)}...`;
 }
 
+const SERVICE_SMS_NAMES: Record<string, string> = {
+  Haircut: "Cut",
+  "Hair styling": "Style",
+  "Hair coloring": "Color",
+  Waxing: "Wax",
+};
+
+function describeServicesSms(services: string[]): string {
+  if (services.length === 0) return "Svc ?";
+  return `Svc ${services
+    .map((service) => SERVICE_SMS_NAMES[service] ?? fit(service, 8))
+    .join("/")}`;
+}
+
 function packAppointment(name: string, payload: ContactPayload): string {
   const reply = `${payload.replyChannel === "call" ? "C" : "T"} ${toGsm7(
     formatPhone(payload.phone),
   )}`;
   const day = payload.primary.date ? formatSmsDate(payload.primary.date) : "-";
-  const service = toGsm7(payload.service.trim() || "Not sure");
 
   return [
     "Hair7 book",
@@ -102,43 +116,48 @@ function packAppointment(name: string, payload: ContactPayload): string {
     reply,
     day,
     describeWindowsSms(payload.primary),
-    service,
+    describeServicesSms(payload.services),
   ].join("\n");
 }
 
-/** Booking SMS with notes omitted — always one GSM-7 segment. */
-export function appointmentSmsBase(payload: ContactPayload): string {
+/** Booking SMS before notes, fitted to the requested GSM-7 character budget. */
+export function appointmentSmsBase(
+  payload: ContactPayload,
+  maxLength: number = SMS_SEGMENT_LENGTH,
+): string {
   let name = toGsm7(payload.name.trim());
   let body = packAppointment(name, payload);
-  if (body.length <= SMS_SEGMENT_LENGTH) return body;
+  if (body.length <= maxLength) return body;
 
-  const overflow = body.length - SMS_SEGMENT_LENGTH;
+  const overflow = body.length - maxLength;
   name = fit(name, Math.max(1, name.length - overflow));
   body = packAppointment(name, payload);
-  return body.length <= SMS_SEGMENT_LENGTH ? body : body.slice(0, SMS_SEGMENT_LENGTH);
+  return body.length <= maxLength ? body : body.slice(0, maxLength);
 }
 
 export function buildSms(payload: ContactPayload): Sms {
   if (payload.formType === "appointment") {
-    const base = appointmentSmsBase(payload);
     const notes = toGsm7(payload.notes);
+    const baseBudget = notes
+      ? SMS_MAX_LENGTH - notes.length - 1
+      : SMS_SEGMENT_LENGTH;
+    const base = appointmentSmsBase(payload, baseBudget);
     return {
       to: notifyDestination(),
-      body: notes ? `${base}\n${notes}` : base,
+      body: (notes ? `${base}\n${notes}` : base).slice(0, SMS_MAX_LENGTH),
     };
   }
 
   const reply = `${payload.replyChannel === "call" ? "C" : "T"} ${toGsm7(
     formatPhone(payload.phone),
   )}`;
+  const prefix = ["Hair7 Q", toGsm7(payload.name.trim()), reply].join("\n");
+  const question = fit(
+    payload.question,
+    Math.max(0, SMS_MAX_LENGTH - prefix.length - 2),
+  );
   return {
     to: notifyDestination(),
-    body: [
-      "Hair7 Q",
-      toGsm7(payload.name.trim()),
-      reply,
-      "",
-      toGsm7(payload.question),
-    ].join("\n"),
+    body: `${prefix}\n\n${question}`.slice(0, SMS_MAX_LENGTH),
   };
 }

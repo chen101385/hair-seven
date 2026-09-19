@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { appointmentSmsBase, buildSms, SMS_SEGMENT_LENGTH, toGsm7 } from "./sms";
-import { emptyPicker, type ContactPayload } from "./types";
+import {
+  appointmentSmsBase,
+  buildSms,
+  SMS_MAX_LENGTH,
+  SMS_SEGMENT_LENGTH,
+  toGsm7,
+} from "./sms";
+import { emptyPicker, MAX_NOTES_LENGTH, type ContactPayload } from "./types";
 
 const payload = (over: Partial<ContactPayload> = {}): ContactPayload => ({
   formType: "appointment",
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
-  service: "Haircut",
+  services: ["Haircut"],
   primary: { ...emptyPicker, date: "2026-09-03", slots: [600, 900] },
   notes: "",
   question: "",
@@ -21,7 +27,7 @@ describe("buildSms", () => {
     const sms = buildSms(
       payload({
         name: "A".repeat(120),
-        service: "Hair coloring",
+        services: ["Hair coloring"],
         primary: { date: "2026-09-03", slots: [600, 720, 900] },
       }),
     );
@@ -50,6 +56,21 @@ describe("buildSms", () => {
     expect(buildSms(payload({ replyChannel: "call" })).body).toContain(
       "C (650) 555-0147",
     );
+  });
+
+  it("never exceeds two concatenated segments with every service and max notes", () => {
+    const sms = buildSms(
+      payload({
+        name: "A".repeat(120),
+        services: ["Haircut", "Hair styling", "Hair coloring", "Waxing"],
+        primary: { date: "2026-09-03", slots: [600, 720, 900] },
+        notes: "x".repeat(MAX_NOTES_LENGTH),
+      }),
+    );
+
+    expect(sms.body).toHaveLength(SMS_MAX_LENGTH);
+    expect(sms.body).toContain("Svc Cut/Style/Color/Wax");
+    expect(sms.body.endsWith("x".repeat(MAX_NOTES_LENGTH))).toBe(true);
   });
 
 });

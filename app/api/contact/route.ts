@@ -3,7 +3,11 @@ import { site } from "@/content/site";
 import { getAvailableDays } from "@/lib/hours";
 import { buildSms, deliver } from "@/lib/notify";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
-import { emptyPicker, MAX_NOTES_LENGTH } from "@/lib/types";
+import {
+  emptyPicker,
+  MAX_NOTES_LENGTH,
+  MAX_QUESTION_LENGTH,
+} from "@/lib/types";
 import type { ContactPayload, ContactResponse, PickerValue } from "@/lib/types";
 import { validateContact } from "@/lib/validate";
 
@@ -16,9 +20,8 @@ const MIN_ELAPSED_MS = 3_000;
 const MAX_LENGTHS: Record<string, number> = {
   name: 120,
   phone: 40,
-  service: 120,
   notes: MAX_NOTES_LENGTH,
-  question: 500,
+  question: MAX_QUESTION_LENGTH,
 };
 
 function str(value: unknown, max: number): string {
@@ -54,6 +57,21 @@ function normalize(raw: unknown): ContactPayload {
     string,
     unknown
   >;
+  const validServices = new Set(site.services.map((service) => service.name));
+  const rawServices = Array.isArray(r.services)
+    ? r.services
+    : typeof r.service === "string"
+      ? [r.service]
+      : [];
+  const services = Array.from(
+    new Set(
+      rawServices.filter(
+        (service): service is string =>
+          typeof service === "string" && validServices.has(service),
+      ),
+    ),
+  );
+
   return {
     formType: r.formType === "question" ? "question" : "appointment",
     name: str(r.name, MAX_LENGTHS.name),
@@ -62,7 +80,7 @@ function normalize(raw: unknown): ContactPayload {
         ? r.replyChannel
         : null,
     phone: str(r.phone, MAX_LENGTHS.phone),
-    service: str(r.service, MAX_LENGTHS.service),
+    services,
     primary: picker(r.primary),
     notes: str(r.notes, MAX_LENGTHS.notes),
     question: str(r.question, MAX_LENGTHS.question),
