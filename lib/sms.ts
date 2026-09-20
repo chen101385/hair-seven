@@ -7,11 +7,13 @@
 import { site } from "@/content/site";
 import {
   formatDateLabel,
+  formatFullDateLabel,
   generateAvailabilityWindows,
   weekdayIndex,
 } from "./hours";
+import type { AlternativeWindow } from "./booking-requests";
 import type { ContactPayload, PickerValue } from "./types";
-import { formatPhone } from "./validate";
+import { formatPhone, phoneToE164 } from "./validate";
 
 export const SMS_SEGMENT_LENGTH = 160;
 /** Concatenated GSM-7 segments use 153 characters each after the first. */
@@ -22,6 +24,8 @@ export type Sms = {
   to: string;
   body: string;
 };
+
+export type BookingSmsOptions = { manageUrl?: string };
 
 const GSM7 =
   "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
@@ -142,8 +146,22 @@ export function appointmentSmsBase(
   return body;
 }
 
-export function buildSms(payload: ContactPayload): Sms {
+export function buildSms(
+  payload: ContactPayload,
+  options: BookingSmsOptions = {},
+): Sms {
   if (payload.formType === "appointment") {
+    if (options.manageUrl) {
+      const review = `Review ${toGsm7(options.manageUrl)}`;
+      const base = appointmentSmsBase(
+        payload,
+        Math.max(70, SMS_SEGMENT_LENGTH - review.length - 1),
+      );
+      return {
+        to: notifyDestination(),
+        body: `${base}\n${review}`.slice(0, SMS_MAX_LENGTH),
+      };
+    }
     const notes = toGsm7(payload.notes);
     const baseBudget = notes
       ? SMS_MAX_LENGTH - notes.length - 1
@@ -167,4 +185,61 @@ export function buildSms(payload: ContactPayload): Sms {
     to: notifyDestination(),
     body: `${prefix}\n\n${question}`.slice(0, SMS_MAX_LENGTH),
   };
+}
+
+export function buildCustomerConfirmationSms(
+  payload: ContactPayload,
+  exactTime: string,
+): Sms {
+  const firstName = fit(payload.name.trim().split(/\s+/)[0] || "there", 30);
+  const day = payload.primary.date
+    ? formatFullDateLabel(payload.primary.date)
+    : "your requested day";
+  const message = toGsm7(
+    `Hair 7: Hi ${firstName}, Kim confirms your appointment for ${day} at ${formatExactTime(
+      exactTime,
+    )}. Please call or text Kim at ${site.phone} if you need to make a change.`,
+  );
+  return {
+    to: phoneToE164(payload.phone),
+    body: fit(message, SMS_MAX_LENGTH),
+  };
+}
+
+export function buildCustomerAlternativesSms(
+  payload: ContactPayload,
+  options: AlternativeWindow[],
+): Sms {
+  const firstName = fit(payload.name.trim().split(/\s+/)[0] || "there", 30);
+  const choices = options
+    .map(
+      (option) =>
+        `${formatSmsDate(option.date)} ${describeAlternativeWindow(option)}`,
+    )
+    .join("; ");
+  const message = toGsm7(
+    `Hair 7: Hi ${firstName}, Kim can't do the requested time. She can offer ${choices}. Please call or text ${site.phone} with your choice.`,
+  );
+  return {
+    to: phoneToE164(payload.phone),
+    body: fit(message, SMS_MAX_LENGTH),
+  };
+}
+
+function formatExactTime(value: string): string {
+  const [hours, minutes] = value.split(":").map(Number);
+  return formatSmsTime(hours * 60 + minutes)
+    .replace("a", " AM")
+    .replace("p", " PM");
+}
+
+function describeAlternativeWindow(option: AlternativeWindow): string {
+  const dayHours = site.hours[weekdayIndex(option.date)];
+  if (!dayHours?.open || !dayHours.close) return formatSmsTime(option.start);
+  const window = generateAvailabilityWindows(dayHours.open, dayHours.close).find(
+    (candidate) => candidate.start === option.start,
+  );
+  return window
+    ? `${formatSmsTime(window.start)}-${formatSmsTime(window.end)}`
+    : formatSmsTime(option.start);
 }

@@ -23,10 +23,18 @@ export type DeliveryMode = "stub" | "sent";
 /** Kim's notification. Recorded locally before the SMS is attempted. */
 export async function deliver(sms: Sms, payload: ContactPayload) {
   await recordSubmission(sms, payload);
-  return sendSms(sms);
+  return sendSms(sms, "Kim");
 }
 
-async function sendSms(sms: Sms): Promise<DeliveryMode> {
+/** Curated response to the customer; stub mode prints it for local review. */
+export async function deliverCustomerSms(sms: Sms) {
+  return sendSms(sms, "the customer");
+}
+
+async function sendSms(
+  sms: Sms,
+  recipient: "Kim" | "the customer",
+): Promise<DeliveryMode> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
   const from = process.env.TWILIO_FROM_NUMBER?.trim();
@@ -42,7 +50,7 @@ async function sendSms(sms: Sms): Promise<DeliveryMode> {
   ].filter((key): key is string => key !== null);
 
   if (missing.length > 0) {
-    printStub(sms, missing);
+    printStub(sms, missing, recipient);
     return "stub";
   }
 
@@ -99,7 +107,11 @@ async function recordSubmission(sms: Sms, payload: ContactPayload) {
   }
 }
 
-export function formatStub(sms: Sms, missing: string[] = []): string {
+export function formatStub(
+  sms: Sms,
+  missing: string[] = [],
+  recipient: "Kim" | "the customer" = "Kim",
+): string {
   const length = sms.body.length;
   const segments = smsSegmentCount(length);
   const rule = "─".repeat(64);
@@ -108,7 +120,7 @@ export function formatStub(sms: Sms, missing: string[] = []): string {
     "",
     rule,
     "  HAIR 7 — STUB MODE. Nothing was texted or emailed.",
-    "  This is the text Kim would have received.",
+    `  This is the text ${recipient} would have received.`,
     missing.length > 0 ? `  Still unset: ${missing.join(", ")}` : null,
     rule,
     row("To", sms.to || "(not configured)"),
@@ -125,6 +137,10 @@ export function formatStub(sms: Sms, missing: string[] = []): string {
     .join("\n");
 }
 
-function printStub(sms: Sms, missing: string[]) {
-  console.log(formatStub(sms, missing));
+function printStub(
+  sms: Sms,
+  missing: string[],
+  recipient: "Kim" | "the customer",
+) {
+  console.log(formatStub(sms, missing, recipient));
 }

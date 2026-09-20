@@ -42,6 +42,14 @@ export function formatPhone(value: string): string {
   return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
 }
 
+/** A validated US/Canada number in Twilio's E.164 format. */
+export function phoneToE164(value: string): string {
+  const digits = digitsOnly(value);
+  const ten =
+    digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  return ten.length === 10 ? `+1${ten}` : value.trim();
+}
+
 /** Field name -> message. An empty object means the form is good to send. */
 export function validateContact(p: ContactPayload): Record<string, string> {
   const errors: Record<string, string> = {};

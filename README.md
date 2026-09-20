@@ -149,6 +149,8 @@ cp .env.local.example .env.local
 | `TWILIO_AUTH_TOKEN` | Same panel. Click to reveal, then paste |
 | `TWILIO_FROM_NUMBER` | Phone Numbers → Active numbers, in E.164 (`+1…`). This is Twilio's sending number, not Kim's |
 | `NOTIFY_MOBILE_NUMBER` | Already set to Kim's salon number, `+16509490796`. Change only if she wants texts elsewhere |
+| `UPSTASH_REDIS_REST_URL` | Vercel Marketplace → Upstash Redis. Stores pending requests for Kim's private links |
+| `UPSTASH_REDIS_REST_TOKEN` | Supplied with the same Upstash integration |
 | `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
 
 Until **all three** Twilio values are set the site stays in stub mode: the SMS
@@ -165,8 +167,14 @@ number — it can take a few days.
 Restart `npm run dev` after saving `.env.local`. On Vercel, add the same keys
 under Project Settings → Environment Variables.
 
-The SMS begins with either `HAIR 7 BOOKING REQUEST` or `HAIR 7 QUESTION`, so Kim
-can tell the two forms apart immediately.
+Blank Upstash values use an in-memory store for local review. **Production must
+have Upstash configured**; serverless memory does not persist reliably between
+the booking submission and Kim opening her link.
+
+An appointment SMS starts with `Hair7 BOOK` and includes a private, random link.
+Kim opens it on her phone or tablet, taps Yes and an exact time, or taps No and
+up to three alternative windows. The app sends the customer a fixed English
+message. Links expire after seven days and can only be completed once.
 
 ---
 
@@ -175,6 +183,7 @@ can tell the two forms apart immediately.
 ```
 content/site.ts          All editable business content. The only file Chris edits.
 lib/hours.ts             Hours formatting + slot generation. Reads site.hours.
+lib/booking-requests.ts  Seven-day pending requests (Upstash; memory locally).
 lib/validate.ts          Validation shared by the browser and the API route.
 lib/notify.ts            SMS composition, Twilio delivery, stub mode.
 lib/placeholder.ts       Keeps placeholders out of links and structured data.

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { site } from "@/content/site";
 import { getAvailableDays } from "@/lib/hours";
+import {
+  bookingResponseUrl,
+  createBookingRequest,
+} from "@/lib/booking-requests";
 import { buildSms, deliver } from "@/lib/notify";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 import {
@@ -163,7 +167,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    await deliver(buildSms(payload), payload);
+    const manageUrl =
+      payload.formType === "appointment"
+        ? bookingResponseUrl(
+            request,
+            (await createBookingRequest(payload)).token,
+          )
+        : undefined;
+    await deliver(buildSms(payload, { manageUrl }), payload);
   } catch (error) {
     console.error("[hair-seven] delivery failed:", error);
     return fail(

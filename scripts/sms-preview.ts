@@ -8,10 +8,15 @@
 
 import { addDays, salonNow, getAvailableDays } from "../lib/hours";
 import { formatStub } from "../lib/notify";
-import { buildSms } from "../lib/sms";
+import {
+  buildCustomerAlternativesSms,
+  buildCustomerConfirmationSms,
+  buildSms,
+} from "../lib/sms";
 import { emptyPicker, type ContactPayload } from "../lib/types";
 
-const day = getAvailableDays()[0];
+const days = getAvailableDays();
+const day = days[0];
 
 const base: ContactPayload = {
   formType: "appointment",
@@ -30,32 +35,45 @@ const base: ContactPayload = {
   elapsedMs: 20_000,
 };
 
-const examples: { label: string; payload: ContactPayload }[] = [
-  { label: "Booking, no note", payload: base },
+const examples = [
   {
-    label: "Booking, short note",
-    payload: { ...base, notes: "Please use the side door." },
+    label: "Booking link to Kim",
+    sms: buildSms(base, {
+      manageUrl: "https://hair7.example/kim/abcdefghijklmnopqrstuvwx",
+    }),
   },
   {
-    label: "Booking, long note",
-    payload: {
-      ...base,
-      notes:
-        "I am flexible on the exact time but would rather not be in the chair over lunch, and I may bring my daughter along for a trim as well.",
-    },
+    label: "Confirmed appointment to customer",
+    sms: buildCustomerConfirmationSms(base, "15:30"),
+  },
+  {
+    label: "Alternative times to customer",
+    sms: buildCustomerAlternativesSms(
+      base,
+      days.slice(1, 3).map((available) => ({
+        date: available.date,
+        start: available.slots[0].start,
+      })),
+    ),
   },
   {
     label: "Question",
-    payload: {
+    sms: buildSms({
       ...base,
       formType: "question",
       replyChannel: "call",
       question: "Do you do grey coverage, and how long does it take?",
-    },
+    }),
   },
 ];
 
-for (const { label, payload } of examples) {
+for (const { label, sms } of examples) {
   console.log(`\n### ${label}`);
-  console.log(formatStub(buildSms(payload)));
+  console.log(
+    formatStub(
+      sms,
+      [],
+      label.includes("customer") ? "the customer" : "Kim",
+    ),
+  );
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   appointmentSmsBase,
+  buildCustomerAlternativesSms,
+  buildCustomerConfirmationSms,
   buildSms,
   SMS_MAX_LENGTH,
   SMS_SEGMENT_LENGTH,
@@ -90,5 +92,34 @@ describe("buildSms", () => {
     expect(sms.body).toHaveLength(SMS_MAX_LENGTH);
     expect(nameLine).toBe("Christopher Chen with the long...");
     expect(sms.body.endsWith("x".repeat(187))).toBe(true);
+  });
+
+  it("puts the secure Kim link in the booking text and leaves notes on the page", () => {
+    const manageUrl = "https://hair7.example/kim/abcdefghijklmnopqrstuvwx";
+    const sms = buildSms(payload({ notes: "Private timing note" }), {
+      manageUrl,
+    });
+
+    expect(sms.body).toContain("Hair7 BOOK");
+    expect(sms.body).toContain(`Review ${manageUrl}`);
+    expect(sms.body).not.toContain("Private timing note");
+    expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+  });
+
+  it("builds fixed customer confirmation and alternative templates", () => {
+    const confirmed = buildCustomerConfirmationSms(payload(), "15:30");
+    const alternatives = buildCustomerAlternativesSms(payload(), [
+      { date: "2026-09-08", start: 840 },
+      { date: "2026-09-09", start: 600 },
+    ]);
+
+    expect(confirmed.to).toBe("+16505550147");
+    expect(confirmed.body).toContain(
+      "Kim confirms your appointment for Thursday, Sep 3 at 3:30 PM",
+    );
+    expect(alternatives.body).toContain("Kim can't do the requested time");
+    expect(alternatives.body).toContain("Tue Sep 8 2p-6p");
+    expect(alternatives.body).toContain("Wed Sep 9 10a-12p");
+    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_MAX_LENGTH);
   });
 });
