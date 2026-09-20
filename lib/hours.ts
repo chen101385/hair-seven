@@ -32,7 +32,7 @@ export type AvailabilityWindow = {
   /** Minutes past midnight. The start is also the stable form value. */
   start: number;
   end: number;
-  name: "Morning" | "Early afternoon" | "Early evening";
+  name: "Morning" | "Afternoon" | "Early afternoon" | "Early evening";
   /** "10:00 AM–12:00 PM" */
   timeLabel: string;
 };
@@ -165,6 +165,17 @@ export function generateAvailabilityWindows(
 ): AvailabilityWindow[] {
   const start = parseHHMM(open);
   const end = parseHHMM(close);
+  if (end - start <= 4 * 60) {
+    return [
+      {
+        start,
+        end,
+        name: start < 12 * 60 ? "Morning" : "Afternoon",
+        timeLabel: `${formatTime12(start)}–${formatTime12(end)}`,
+      },
+    ];
+  }
+
   const boundaries = [start, 12 * 60, 15 * 60, end]
     .filter((value) => value >= start && value <= end)
     .filter((value, index, values) => index === 0 || value !== values[index - 1]);

@@ -36,11 +36,11 @@ export const site = {
 
   // Hours drive BOTH the Hours section and the booking time slots. One source of
   // truth. Use 24h "HH:MM" internally; render as 12h with AM/PM. null = closed.
-  // Kim is closed Monday and currently starts at noon on Tuesday.
+  // Kim is closed Monday and works one 2–6 PM window on Tuesday.
   hours: [
     { day: "Sunday", open: "10:00", close: "17:00" },
     { day: "Monday", open: null, close: null },
-    { day: "Tuesday", open: "12:00", close: "18:00" },
+    { day: "Tuesday", open: "14:00", close: "18:00" },
     { day: "Wednesday", open: "10:00", close: "18:00" },
     { day: "Thursday", open: "10:00", close: "18:00" },
     { day: "Friday", open: "10:00", close: "18:00" },

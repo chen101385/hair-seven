@@ -90,7 +90,7 @@ directly.
 | `replyWindow` | The "24 to 48 hours" promise, used in three places |
 
 With the current hours, a 10:00–18:00 day yields three windows: 10–12, 12–3,
-and 3–6. Tuesday yields 12–3 and 3–6, and Monday is omitted because Kim is
+and 3–6. Tuesday is one 2–6 PM window, and Monday is omitted because Kim is
 closed.
 
 **How the booking actually works.** Kim keeps her appointment book on paper, so

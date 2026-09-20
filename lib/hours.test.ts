@@ -137,10 +137,15 @@ describe("generateAvailabilityWindows", () => {
     expect(slots.at(-1)).toMatchObject({ start: 900, end: 1020 });
   });
 
-  it("offers only afternoon windows on a noon–6 Tuesday", () => {
-    expect(
-      generateAvailabilityWindows("12:00", "18:00").map((slot) => slot.start),
-    ).toEqual([720, 900]);
+  it("offers one four-hour window on a 2–6 Tuesday", () => {
+    expect(generateAvailabilityWindows("14:00", "18:00")).toEqual([
+      {
+        start: 840,
+        end: 1080,
+        name: "Afternoon",
+        timeLabel: "2:00 PM–6:00 PM",
+      },
+    ]);
   });
 });
 
@@ -182,12 +187,23 @@ describe("getAvailableDays", () => {
   it("carries each day's own hours through to its slots", () => {
     const days = getAvailableDays(tuesdayMorning);
     const sunday = days.find((d) => d.weekdayLong === "Sunday");
+    const tuesday = days.find((d) => d.weekdayLong === "Tuesday");
     const wednesday = days.find((d) => d.weekdayLong === "Wednesday");
 
     // Sunday closes at 5, the rest at 6 — the picker must reflect that.
     expect(sunday?.slots).toHaveLength(3);
     expect(sunday?.slots.at(-1)).toMatchObject({ start: 900, end: 1020 });
     expect(sunday?.hoursLabel).toBe("10am–5pm");
+
+    expect(tuesday?.slots).toEqual([
+      {
+        start: 840,
+        end: 1080,
+        name: "Afternoon",
+        timeLabel: "2:00 PM–6:00 PM",
+      },
+    ]);
+    expect(tuesday?.hoursLabel).toBe("2pm–6pm");
 
     expect(wednesday?.slots).toHaveLength(3);
     expect(wednesday?.slots.at(-1)).toMatchObject({ start: 900, end: 1080 });
