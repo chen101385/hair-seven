@@ -196,7 +196,7 @@ export function buildCustomerConfirmationSms(
     ? formatFullDateLabel(payload.primary.date)
     : "your requested day";
   const message = toGsm7(
-    `Hair 7: Hi ${firstName}, Kim confirms your appointment for ${day} at ${formatExactTime(
+    `Hair 7: Hi ${firstName}, your appointment is confirmed for ${day} at ${formatExactTime(
       exactTime,
     )}. Please call or text Kim at ${site.phone} if you need to make a change.`,
   );
@@ -218,7 +218,7 @@ export function buildCustomerAlternativesSms(
     )
     .join("; ");
   const message = toGsm7(
-    `Hair 7: Hi ${firstName}, Kim can't do the requested time. She can offer ${choices}. Please call or text ${site.phone} with your choice.`,
+    `Hair 7: Hi ${firstName}, Kim can offer ${choices} instead. Call or text ${site.phone} with your choice.`,
   );
   return {
     to: phoneToE164(payload.phone),

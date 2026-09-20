@@ -115,9 +115,9 @@ describe("buildSms", () => {
 
     expect(confirmed.to).toBe("+16505550147");
     expect(confirmed.body).toContain(
-      "Kim confirms your appointment for Thursday, Sep 3 at 3:30 PM",
+      "your appointment is confirmed for Thursday, Sep 3 at 3:30 PM",
     );
-    expect(alternatives.body).toContain("Kim can't do the requested time");
+    expect(alternatives.body).toContain("Kim can offer");
     expect(alternatives.body).toContain("Tue Sep 8 2p-6p");
     expect(alternatives.body).toContain("Wed Sep 9 10a-12p");
     expect(alternatives.body.length).toBeLessThanOrEqual(SMS_MAX_LENGTH);
