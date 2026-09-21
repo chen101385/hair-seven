@@ -187,6 +187,17 @@ export function buildSms(
   };
 }
 
+/** Appended to every customer SMS. Kim's Hair7 BOOK/Q texts do not include this. */
+export const CUSTOMER_SMS_OPT_OUT =
+  "Reply STOP to opt out, HELP for help. Msg and data rates may apply.";
+
+function customerSms(to: string, message: string): Sms {
+  return {
+    to,
+    body: fit(toGsm7(`${message} ${CUSTOMER_SMS_OPT_OUT}`), SMS_MAX_LENGTH),
+  };
+}
+
 export function buildCustomerConfirmationSms(
   payload: ContactPayload,
   exactTime: string,
@@ -195,15 +206,12 @@ export function buildCustomerConfirmationSms(
   const day = payload.primary.date
     ? formatFullDateLabel(payload.primary.date)
     : "your requested day";
-  const message = toGsm7(
-    `Hair 7: Hi ${firstName}, your appointment is confirmed for ${day} at ${formatExactTime(
+  return customerSms(
+    phoneToE164(payload.phone),
+    `Hair 7: Hi ${firstName}, confirmed ${day} at ${formatExactTime(
       exactTime,
-    )}. Please call or text Kim at ${site.phone} if you need to make a change.`,
+    )}. Call ${site.phone} to change.`,
   );
-  return {
-    to: phoneToE164(payload.phone),
-    body: fit(message, SMS_MAX_LENGTH),
-  };
 }
 
 export function buildCustomerAlternativesSms(
@@ -217,13 +225,10 @@ export function buildCustomerAlternativesSms(
         `${formatSmsDate(option.date)} ${describeAlternativeWindow(option)}`,
     )
     .join("; ");
-  const message = toGsm7(
-    `Hair 7: Hi ${firstName}, Kim can offer ${choices} instead. Call or text ${site.phone} with your choice.`,
+  return customerSms(
+    phoneToE164(payload.phone),
+    `Hair 7: Hi ${firstName}, Kim can offer ${choices}. Call ${site.phone} with your choice.`,
   );
-  return {
-    to: phoneToE164(payload.phone),
-    body: fit(message, SMS_MAX_LENGTH),
-  };
 }
 
 function formatExactTime(value: string): string {

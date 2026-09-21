@@ -39,10 +39,18 @@ Prints every outstanding `PLACEHOLDER` and `VERIFY` — the list to take to Kim.
 npm run sms:preview
 ```
 
-Prints the exact text Kim receives, with its character count and how many texts
-it costs. A booking with no note is one 160-character SMS. Notes are limited to
-200 characters, and the complete booking is capped at 306 GSM-7 characters:
-never more than two concatenated texts.
+Prints the live templates (Kim's booking link and the customer texts), with
+character count and how many texts each costs. A booking without notes stays
+one 160-character SMS. Notes can use a second concatenated text, hard-capped at
+306 GSM-7 characters.
+
+```bash
+npm run sms:campaign
+```
+
+Prints paste-ready A2P 10DLC sample messages and the campaign description.
+Customer texts include STOP/HELP. Kim's Hair7 BOOK / Hair7 Q notices are
+internal and should not be submitted as campaign samples.
 
 ```bash
 npm test
@@ -167,6 +175,12 @@ reliably to mobile phones. Start that in the Twilio console when you buy the
 number — it can take a few days. Campaign reviewers expect a public privacy
 policy that talks about SMS. This site’s is at `/privacy`
 (https://your-domain/privacy). Paste that URL into the brand/campaign form.
+Run `npm run sms:campaign` for the use-case paragraph and sample message
+bodies. Turn on Twilio Advanced Opt-Out so STOP, START, and HELP work without
+an extra webhook. The backend is already `POST /api/contact` (texts Kim) and
+`POST /api/kim/requests/[token]` (texts the customer). Both call Twilio when
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` are set on
+Vercel; until then they still accept submissions and print the SMS.
 
 Restart `npm run dev` after saving `.env.local`. On Vercel, add the same keys
 under Project Settings → Environment Variables.
@@ -196,7 +210,8 @@ lib/validate.ts          Validation shared by the browser and the API route.
 lib/notify.ts            SMS composition, Twilio delivery, stub mode.
 lib/placeholder.ts       Keeps placeholders out of links and structured data.
 app/page.tsx             The single page.
-app/api/contact/route.ts One endpoint, branching on formType.
+app/api/contact/route.ts Receives the forms; texts Kim via Twilio (or stub).
+app/api/kim/requests/    Kim's Yes/No; texts the customer via the same helper.
 components/              Sections and the booking form.
 ```
 

@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "punchlist": "node scripts/punchlist.mjs",
-    "sms:preview": "tsx scripts/sms-preview.ts"
+    "sms:preview": "tsx scripts/sms-preview.ts",
+    "sms:campaign": "tsx scripts/sms-campaign.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.4",
