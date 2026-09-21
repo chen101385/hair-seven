@@ -126,7 +126,7 @@ sign photo, an old flyer? The favicon and app icon are placeholders.
       least resistance for Next.js and the free tier covers this traffic.
 - [ ] Set the environment variables (`README.md` § "Turning on real
       notifications" has the table):
-      - `NEXT_PUBLIC_SITE_URL` — the real origin, e.g. `https://hair7mv.com`
+      - `NEXT_PUBLIC_SITE_URL` — the real origin, e.g. `https://hair7salon.com`
       - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`
       - `TWILIO_FROM_NUMBER`
       - `NOTIFY_MOBILE_NUMBER` — Kim's phone

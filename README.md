@@ -161,7 +161,7 @@ cp .env.local.example .env.local
 | `UPSTASH_REDIS_REST_TOKEN` | Optional local alias. Production uses Marketplace `KV_REST_API_TOKEN` |
 | `KV_REST_API_URL` | Injected by Vercel Marketplace Upstash Redis. Stores pending booking requests |
 | `KV_REST_API_TOKEN` | Injected with the same Upstash store |
-| `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
+| `NEXT_PUBLIC_SITE_URL` | Production is `https://hair7salon.com` (set on Vercel). Local preview stays `http://localhost:3001` |
 
 Until **all three** Twilio values are set the site stays in stub mode: the SMS
 is printed to the dev-server console (with the names of the variables still
@@ -174,7 +174,7 @@ A US Twilio number usually needs A2P 10DLC registration before it will deliver
 reliably to mobile phones. Start that in the Twilio console when you buy the
 number — it can take a few days. Campaign reviewers expect a public privacy
 policy that talks about SMS. This site’s is at `/privacy`
-(https://your-domain/privacy). Paste that URL into the brand/campaign form.
+(https://hair7salon.com/privacy). Paste that URL into the brand/campaign form.
 Run `npm run sms:campaign` for the use-case paragraph and sample message
 bodies. Turn on Twilio Advanced Opt-Out so STOP, START, and HELP work without
 an extra webhook. The backend is already `POST /api/contact` (texts Kim) and
