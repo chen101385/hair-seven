@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   bookingResponseUrl,
   createBookingRequest,
   getBookingRequest,
+  hasDurableBookingStorage,
   saveBookingRequest,
   withBookingLock,
 } from "./booking-requests";
@@ -20,6 +21,26 @@ const payload: ContactPayload = {
   company: "",
   elapsedMs: 20_000,
 };
+
+describe("durable Redis credentials", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("stays local when Upstash and Marketplace KV vars are blank", () => {
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    vi.stubEnv("KV_REST_API_URL", "");
+    vi.stubEnv("KV_REST_API_TOKEN", "");
+    expect(hasDurableBookingStorage()).toBe(false);
+  });
+
+  it("uses Vercel Marketplace KV_REST_API_* credentials", () => {
+    vi.stubEnv("KV_REST_API_URL", "https://example.upstash.io");
+    vi.stubEnv("KV_REST_API_TOKEN", "example-token");
+    expect(hasDurableBookingStorage()).toBe(true);
+  });
+});
 
 describe("local booking request storage", () => {
   it("creates an unguessable request and persists its decision", async () => {

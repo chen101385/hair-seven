@@ -35,10 +35,20 @@ const localLocks =
   globalThis.hairSevenBookingLocks ??
   (globalThis.hairSevenBookingLocks = new Set());
 
+function redisCredentials(): { url: string; token: string } | null {
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL?.trim() ||
+    process.env.KV_REST_API_URL?.trim();
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
+    process.env.KV_REST_API_TOKEN?.trim();
+  if (!url || !token) return null;
+  return { url, token };
+}
+
 function redisClient(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
-  return url && token ? new Redis({ url, token }) : null;
+  const credentials = redisCredentials();
+  return credentials ? new Redis(credentials) : null;
 }
 
 export function hasDurableBookingStorage(): boolean {

@@ -149,8 +149,10 @@ cp .env.local.example .env.local
 | `TWILIO_AUTH_TOKEN` | Same panel. Click to reveal, then paste |
 | `TWILIO_FROM_NUMBER` | Phone Numbers → Active numbers, in E.164 (`+1…`). This is Twilio's sending number, not Kim's |
 | `NOTIFY_MOBILE_NUMBER` | Already set to Kim's salon number, `+16509490796`. Change only if she wants texts elsewhere |
-| `UPSTASH_REDIS_REST_URL` | Vercel Marketplace → Upstash Redis. Stores pending requests for Kim's private links |
-| `UPSTASH_REDIS_REST_TOKEN` | Supplied with the same Upstash integration |
+| `UPSTASH_REDIS_REST_URL` | Optional local alias. Production uses Marketplace `KV_REST_API_URL` |
+| `UPSTASH_REDIS_REST_TOKEN` | Optional local alias. Production uses Marketplace `KV_REST_API_TOKEN` |
+| `KV_REST_API_URL` | Injected by Vercel Marketplace Upstash Redis. Stores pending booking requests |
+| `KV_REST_API_TOKEN` | Injected with the same Upstash store |
 | `NEXT_PUBLIC_SITE_URL` | Public origin, once a domain is assigned. Drives canonical URLs, Open Graph, `robots.txt`, `sitemap.xml` |
 
 Until **all three** Twilio values are set the site stays in stub mode: the SMS
@@ -167,9 +169,13 @@ number — it can take a few days.
 Restart `npm run dev` after saving `.env.local`. On Vercel, add the same keys
 under Project Settings → Environment Variables.
 
-Blank Upstash values use an in-memory store for local review. **Production must
-have Upstash configured**; serverless memory does not persist reliably between
-the booking submission and Kim opening her link.
+Blank Upstash / KV values use an in-memory store for local review. The
+hair-seven Vercel project is already linked to the Marketplace store
+`upstash-kv-sky-globe` (Free plan, San Francisco primary). Preview and
+production deployments receive `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+automatically. **Those environments must keep that store connected**; serverless
+memory does not persist reliably between the booking submission and Kim opening
+her link.
 
 An appointment SMS starts with `Hair7 BOOK` and includes a private, random link.
 Kim opens it on her phone or tablet, taps Yes and an exact time, or taps No and
