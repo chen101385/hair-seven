@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
+import { privacy } from "@/content/privacy";
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const baseUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+).replace(/\/$/, "");
 
-/** One page, one entry. That's the whole site by design. */
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
@@ -10,6 +12,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 1,
+    },
+    {
+      url: `${baseUrl}${privacy.path}`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
   ];
 }

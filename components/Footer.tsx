@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { privacy } from "@/content/privacy";
 import { site } from "@/content/site";
 import { formatDayHours } from "@/lib/hours";
 import { AddressLines } from "./AddressLines";
@@ -52,7 +54,13 @@ export function Footer() {
 
         <p className="mt-10 text-small text-paper/80">
           © {new Date().getFullYear()} {site.name}. {site.address.city},{" "}
-          {site.address.state}.
+          {site.address.state}.{" "}
+          <Link
+            href={privacy.path}
+            className="font-semibold underline underline-offset-4 text-paper"
+          >
+            Privacy
+          </Link>
         </p>
       </div>
     </footer>

@@ -43,7 +43,7 @@ export function ReplyChannelFields({
             title="Text me"
             /* True, reassuring, and it heads off the "will I get spammed"
                hesitation that stops older visitors from giving out a mobile. */
-            detail="Kim will text you back herself from her own phone. You won’t get automated messages."
+            detail="Kim will text you about this request. We don’t send marketing texts."
           />
           <ChannelCard
             id={`${id}-channel-call`}

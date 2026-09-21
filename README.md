@@ -164,7 +164,9 @@ submissions by email.
 
 A US Twilio number usually needs A2P 10DLC registration before it will deliver
 reliably to mobile phones. Start that in the Twilio console when you buy the
-number — it can take a few days.
+number — it can take a few days. Campaign reviewers expect a public privacy
+policy that talks about SMS. This site’s is at `/privacy`
+(https://your-domain/privacy). Paste that URL into the brand/campaign form.
 
 Restart `npm run dev` after saving `.env.local`. On Vercel, add the same keys
 under Project Settings → Environment Variables.

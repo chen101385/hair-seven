@@ -2,10 +2,10 @@ import { site } from "@/content/site";
 import { PhoneIcon } from "./icons";
 
 const NAV = [
-  { href: "#services", label: "Services" },
-  { href: "#about", label: "About Kim" },
-  { href: "#hours", label: "Hours" },
-  { href: "#book", label: "Book" },
+  { href: "/#services", label: "Services" },
+  { href: "/#about", label: "About Kim" },
+  { href: "/#hours", label: "Hours" },
+  { href: "/#book", label: "Book" },
 ];
 
 /**
@@ -17,7 +17,7 @@ export function Header() {
   return (
     <header className="on-awning sticky top-0 z-50 bg-awning text-paper">
       <a
-        href="#book"
+        href="/#book"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-10 focus:rounded focus:bg-paper focus:px-4 focus:py-3 focus:font-semibold focus:text-awning-dark"
       >
         Skip to the booking form
@@ -26,7 +26,7 @@ export function Header() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <a
-            href="#top"
+            href="/#top"
             className="font-display text-[1.25rem] font-semibold tracking-wide md:text-[1.5rem]"
           >
             {site.name}

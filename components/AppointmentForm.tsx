@@ -12,6 +12,7 @@ import { Field, describedBy } from "./Field";
 import { Honeypot } from "./Honeypot";
 import { CheckIcon } from "./icons";
 import { ReplyChannelFields } from "./ReplyChannelFields";
+import { SmsConsentNote } from "./SmsConsentNote";
 import { SubmitError } from "./SubmitError";
 import { emptyPayload, useContactForm } from "./useContactForm";
 
@@ -176,9 +177,7 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
           Nothing is booked yet. Kim will call or text within{" "}
           {site.booking.replyWindow} to confirm the exact appointment time.
         </p>
-        <p className="mt-2 text-small text-ink/75">
-          Your information goes only to Kim. It isn’t shared or sold.
-        </p>
+        <SmsConsentNote />
       </div>
     </form>
   );

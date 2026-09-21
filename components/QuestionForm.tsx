@@ -7,6 +7,7 @@ import { Confirmation } from "./Confirmation";
 import { Field, describedBy } from "./Field";
 import { Honeypot } from "./Honeypot";
 import { ReplyChannelFields } from "./ReplyChannelFields";
+import { SmsConsentNote } from "./SmsConsentNote";
 import { SubmitError } from "./SubmitError";
 import { emptyPayload, useContactForm } from "./useContactForm";
 
@@ -113,9 +114,7 @@ export function QuestionForm() {
         </button>
 
         <p className="mt-3">Kim usually replies within a day or two.</p>
-        <p className="mt-2 text-small text-ink/75">
-          Your information goes only to Kim. It isn’t shared or sold.
-        </p>
+        <SmsConsentNote />
       </div>
     </form>
   );
