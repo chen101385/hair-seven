@@ -3,21 +3,23 @@
 import { useCallback } from "react";
 import { site } from "@/content/site";
 import type { AvailableDay } from "@/lib/hours";
-import { describeDay, describeSlot, describeTimes } from "@/lib/hours";
-import type { ContactPayload } from "@/lib/types";
+import { describeDay, describeTimes } from "@/lib/hours";
+import { MAX_NOTES_LENGTH, type ContactPayload } from "@/lib/types";
 import { formatPhone } from "@/lib/validate";
 import { Confirmation } from "./Confirmation";
 import { DayTimePicker } from "./DayTimePicker";
 import { Field, describedBy } from "./Field";
 import { Honeypot } from "./Honeypot";
+import { CheckIcon } from "./icons";
 import { ReplyChannelFields } from "./ReplyChannelFields";
+import { SmsConsentNote } from "./SmsConsentNote";
 import { SubmitError } from "./SubmitError";
 import { emptyPayload, useContactForm } from "./useContactForm";
 
 const ID = "appt";
 
 /** Visual top-to-bottom order, so a failed submit lands on the first problem. */
-const FIELD_ORDER = ["name", "primary", "replyChannel", "phone", "email"];
+const FIELD_ORDER = ["name", "primary", "replyChannel", "phone"];
 
 /**
  * This is a request, not a live booking. Nothing here may imply an instant
@@ -35,8 +37,6 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         return `${ID}-channel-text`;
       case "phone":
         return `${ID}-phone`;
-      case "email":
-        return `${ID}-email`;
       default:
         return null;
     }
@@ -52,6 +52,13 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
   if (confirmed) return <AppointmentConfirmation values={confirmed} />;
 
   const sending = status === "sending";
+  const notesRemaining = MAX_NOTES_LENGTH - values.notes.length;
+  const toggleService = (service: string) => {
+    const services = values.services.includes(service)
+      ? values.services.filter((selected) => selected !== service)
+      : [...values.services, service];
+    set("services", services);
+  };
 
   return (
     <form onSubmit={submit} noValidate className="relative space-y-6">
@@ -70,29 +77,46 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         />
       </Field>
 
-      <Field id={`${ID}-service`} label="Service you’d like" optional>
-        <select
-          id={`${ID}-service`}
-          className="field-input"
-          value={values.service}
-          onChange={(event) => set("service", event.target.value)}
+      <fieldset>
+        <legend className="font-semibold">
+          Services you’d like{" "}
+          <span className="font-normal text-ink/75">(optional)</span>
+        </legend>
+        <p id={`${ID}-services-hint`} className="text-small text-ink/75 mt-1 mb-2">
+          Choose as many as you need, or leave this blank if you’re not sure.
+        </p>
+        <div
+          className="grid gap-3 sm:grid-cols-2"
+          aria-describedby={`${ID}-services-hint`}
         >
-          <option value="">Not sure yet</option>
           {site.services.map((service) => (
-            <option key={service.name} value={service.name}>
-              {service.name}
-            </option>
+            <div key={service.name} className="relative">
+              <input
+                type="checkbox"
+                id={`${ID}-service-${service.name.replaceAll(" ", "-")}`}
+                className="choice-input sr-only"
+                checked={values.services.includes(service.name)}
+                onChange={() => toggleService(service.name)}
+              />
+              <label
+                htmlFor={`${ID}-service-${service.name.replaceAll(" ", "-")}`}
+                className="choice choice-service"
+              >
+                <CheckIcon className="choice-check h-4 w-4" />
+                {service.name}
+              </label>
+            </div>
           ))}
-        </select>
-      </Field>
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend className="font-semibold">Day and time</legend>
         {/* Said plainly, above the picker — and again under the button. */}
         <p className="mt-1 mb-4">
-          Pick a day, then tap every time that would work for you. Kim keeps her
-          appointment book by hand, so this isn’t a live calendar — she’ll write
-          back within {site.booking.replyWindow} to confirm which time she has.
+          Pick a day, then choose every time window that works for you. This
+          isn’t a live calendar — Kim will call or text within{" "}
+          {site.booking.replyWindow} to confirm the exact time.
         </p>
         <DayTimePicker
           id={`${ID}-primary`}
@@ -107,11 +131,9 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         id={ID}
         channel={values.replyChannel}
         phone={values.phone}
-        email={values.email}
         errors={errors}
         onChannelChange={(next) => set("replyChannel", next)}
         onPhoneChange={(next) => set("phone", next)}
-        onEmailChange={(next) => set("email", next)}
         onBlurField={checkOnBlur}
       />
 
@@ -119,11 +141,20 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         id={`${ID}-notes`}
         label="Anything else she should know"
         optional
-        hint="Allergies, a photo you want to bring, who referred you — anything helpful."
+        hint={
+          <span aria-live="polite">
+            {values.notes.length === 0
+              ? `Specific timing notes or anything else Kim should know. ${MAX_NOTES_LENGTH} characters maximum.`
+              : `${notesRemaining} ${
+                  notesRemaining === 1 ? "character" : "characters"
+                } remaining`}
+          </span>
+        }
       >
         <textarea
           id={`${ID}-notes`}
           rows={3}
+          maxLength={MAX_NOTES_LENGTH}
           className="field-input"
           value={values.notes}
           aria-describedby={describedBy(`${ID}-notes`, true, false)}
@@ -143,13 +174,10 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         </button>
 
         <p className="mt-3">
-          Nothing is booked yet. Kim checks her appointment book and writes back
-          within {site.booking.replyWindow} to confirm which of your times she
-          has.
+          Nothing is booked yet. Kim will call or text within{" "}
+          {site.booking.replyWindow} to confirm the exact appointment time.
         </p>
-        <p className="mt-2 text-small text-ink/75">
-          Your information goes only to Kim. It isn’t shared or sold.
-        </p>
+        <SmsConsentNote />
       </div>
     </form>
   );
@@ -161,39 +189,28 @@ function AppointmentConfirmation({ values }: { values: ContactPayload }) {
   return (
     <Confirmation heading="Request received.">
       <p>
-        Kim will check her appointment book and get back to you within{" "}
-        {site.booking.replyWindow} to confirm which time she has. Nothing is
-        booked until she does.
+        Kim will check her appointment book, then call or text within{" "}
+        {site.booking.replyWindow} to confirm the exact time. Nothing is booked
+        until she does.
       </p>
 
       <dl className="mt-5 space-y-3">
-        {values.primary.flexible ? (
-          <div>
-            <dt className="font-semibold">You asked for</dt>
-            <dd>{describeSlot(values.primary)}</dd>
-          </div>
-        ) : (
-          <>
-            <div>
-              <dt className="font-semibold">Day</dt>
-              <dd>{describeDay(values.primary)}</dd>
-            </div>
-            <div>
-              <dt className="font-semibold">
-                {values.primary.slots.length === 1
-                  ? "Time you asked for"
-                  : "Times that work for you"}
-              </dt>
-              <dd>{describeTimes(values.primary)}</dd>
-            </div>
-          </>
-        )}
+        <div>
+          <dt className="font-semibold">Day</dt>
+          <dd>{describeDay(values.primary)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold">
+            {values.primary.slots.length === 1
+              ? "Window that works for you"
+              : "Windows that work for you"}
+          </dt>
+          <dd>{describeTimes(values.primary)}</dd>
+        </div>
         <div>
           <dt className="font-semibold">She’ll get back to you</dt>
           <dd>
-            {byText
-              ? `By text, at ${formatPhone(values.phone)}`
-              : `By email, at ${values.email.trim()}`}
+            {byText ? "By text" : "By phone"}, at {formatPhone(values.phone)}
           </dd>
         </div>
       </dl>

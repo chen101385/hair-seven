@@ -21,12 +21,20 @@ export type AvailableDay = {
   weekdayLong: string;
   /** "Sep 16" */
   dateLabel: string;
-  /** "Tuesday, Sep 16" — used in confirmations and the email */
+  /** "Tuesday, Sep 16" — used in confirmations and notifications */
   fullLabel: string;
   /** "10am–6pm" */
   hoursLabel: string;
-  /** Minutes past midnight, e.g. [600, 630, ...] */
-  slots: number[];
+  slots: AvailabilityWindow[];
+};
+
+export type AvailabilityWindow = {
+  /** Minutes past midnight. The start is also the stable form value. */
+  start: number;
+  end: number;
+  name: "Morning" | "Afternoon" | "Early afternoon" | "Early evening";
+  /** "10:00 AM–12:00 PM" */
+  timeLabel: string;
 };
 
 const WEEKDAYS_LONG = [
@@ -150,24 +158,44 @@ export function formatFullDateLabel(date: string): string {
   return `${WEEKDAYS_LONG[weekdayIndex(date)]}, ${formatDateLabel(date)}`;
 }
 
-/**
- * Every slot a day could offer, ignoring lead time.
- * Slots run from open, every `slotMinutes`, stopping `lastSlotBufferMin`
- * before close so there is room for the appointment itself.
- *
- * 10:00–18:00 at 30 min with a 60 min buffer -> 10:00 AM through 5:00 PM.
- */
-export function generateSlots(
+/** Broad windows for when a visitor is available, not exact appointment starts. */
+export function generateAvailabilityWindows(
   open: string,
   close: string,
-  slotMinutes: number = site.booking.slotMinutes,
-  lastSlotBufferMin: number = site.booking.lastSlotBufferMin,
-): number[] {
+): AvailabilityWindow[] {
   const start = parseHHMM(open);
-  const lastStart = parseHHMM(close) - lastSlotBufferMin;
-  const slots: number[] = [];
-  for (let t = start; t <= lastStart; t += slotMinutes) slots.push(t);
-  return slots;
+  const end = parseHHMM(close);
+  if (end - start <= 4 * 60) {
+    return [
+      {
+        start,
+        end,
+        name: start < 12 * 60 ? "Morning" : "Afternoon",
+        timeLabel: `${formatTime12(start)}–${formatTime12(end)}`,
+      },
+    ];
+  }
+
+  const boundaries = [start, 12 * 60, 15 * 60, end]
+    .filter((value) => value >= start && value <= end)
+    .filter((value, index, values) => index === 0 || value !== values[index - 1]);
+
+  return boundaries.slice(0, -1).map((windowStart, index) => {
+    const windowEnd = boundaries[index + 1];
+    const name =
+      windowStart < 12 * 60
+        ? "Morning"
+        : windowStart < 15 * 60
+          ? "Early afternoon"
+          : "Early evening";
+
+    return {
+      start: windowStart,
+      end: windowEnd,
+      name,
+      timeLabel: `${formatTime12(windowStart)}–${formatTime12(windowEnd)}`,
+    };
+  });
 }
 
 /**
@@ -192,8 +220,8 @@ export function getAvailableDays(now: Date = new Date()): AvailableDay[] {
     // Slot times are minutes-past-midnight on `date`; the lead-time threshold is
     // expressed in the same frame by subtracting the whole days in between.
     const threshold = earliest - offset * MINUTES_PER_DAY;
-    const slots = generateSlots(dayHours.open, dayHours.close).filter(
-      (slot) => slot >= threshold,
+    const slots = generateAvailabilityWindows(dayHours.open, dayHours.close).filter(
+      (slot) => slot.start >= threshold,
     );
     if (slots.length === 0) continue;
 
@@ -212,57 +240,44 @@ export function getAvailableDays(now: Date = new Date()): AvailableDay[] {
   return days;
 }
 
-/** "Flexible — mornings next week", or null if they picked real times. */
-export function flexibleNote(picker: PickerValue): string | null {
-  if (!picker.flexible) return null;
-  const note = picker.flexibleText.trim();
-  return note ? `Flexible — ${note}` : "Flexible — no preference given";
-}
-
-/** "Thursday, Sep 18", or the visitor's own words if they're flexible. */
+/** "Thursday, Sep 18". */
 export function describeDay(picker: PickerValue): string {
-  return flexibleNote(picker) ?? (picker.date ? formatFullDateLabel(picker.date) : "—");
+  return picker.date ? formatFullDateLabel(picker.date) : "—";
 }
 
-/** "10:00 AM, 2:00 PM, 3:30 PM" — every time the visitor said would work. */
+/** Every broad availability window the visitor selected. */
 export function describeTimes(picker: PickerValue): string {
-  if (picker.flexible || picker.slots.length === 0) return "—";
-  return picker.slots.map(formatTime12).join(", ");
+  if (!picker.date || picker.slots.length === 0) return "—";
+  const dayHours = site.hours[weekdayIndex(picker.date)];
+  if (!dayHours?.open || !dayHours.close) return "—";
+  const windows = generateAvailabilityWindows(dayHours.open, dayHours.close);
+
+  return picker.slots
+    .map((start) => {
+      const window = windows.find((candidate) => candidate.start === start);
+      return window ? `${window.name} (${window.timeLabel})` : formatTime12(start);
+    })
+    .join(", ");
 }
 
 /**
- * One-line form for the confirmation card. Shared with the email so the two
- * can never disagree about what was actually requested.
+ * One-line form for concise confirmations and notifications.
  */
 export function describeSlot(picker: PickerValue): string {
-  const flexible = flexibleNote(picker);
-  if (flexible) return flexible;
   if (!picker.date || picker.slots.length === 0) return "—";
   return `${formatFullDateLabel(picker.date)} — ${describeTimes(picker)}`;
 }
 
 /**
  * The subject-line form: short enough to read in a phone notification.
- * With several times picked, the count is more useful than the list — Kim
- * opens the email to see which ones.
+ * With several windows picked, the count is more useful than the full list.
  */
 export function describeSlotShort(picker: PickerValue): string {
-  if (picker.flexible) return "Flexible";
   if (!picker.date || picker.slots.length === 0) return "No time given";
   const day = formatFullDateLabel(picker.date);
   return picker.slots.length === 1
-    ? `${day} ${formatTime12(picker.slots[0])}`
-    : `${day} (${picker.slots.length} times)`;
-}
-
-/** "$45–$75", "$45", or "Call for pricing." */
-export function formatPrice(
-  priceLow: number | null,
-  priceHigh: number | null,
-): string {
-  if (priceLow == null || priceHigh == null) return "Call for pricing.";
-  if (priceLow === priceHigh) return `$${priceLow}`;
-  return `$${priceLow}–$${priceHigh}`;
+    ? `${day} (${describeTimes(picker)})`
+    : `${day} (${picker.slots.length} windows)`;
 }
 
 /** Schema.org opening hours, derived from the same array. */

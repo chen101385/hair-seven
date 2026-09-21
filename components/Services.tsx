@@ -1,5 +1,4 @@
 import { site } from "@/content/site";
-import { formatPrice } from "@/lib/hours";
 
 export function Services() {
   return (
@@ -11,7 +10,7 @@ export function Services() {
           {site.services.map((service) => (
             <li
               key={service.name}
-              className="flex flex-col gap-1 border-b border-ink/15 py-5 last:border-b-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
+              className="border-b border-ink/15 py-5 last:border-b-0"
             >
               <div className="sm:flex-1">
                 <h3>{service.name}</h3>
@@ -29,9 +28,6 @@ export function Services() {
                   <p className="mt-1 text-small text-ink/75">{service.note}</p>
                 ) : null}
               </div>
-              <p className="font-display text-[1.375rem] font-semibold text-brass-ink sm:shrink-0 sm:text-right">
-                {formatPrice(service.priceLow, service.priceHigh)}
-              </p>
             </li>
           ))}
         </ul>

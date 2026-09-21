@@ -30,7 +30,7 @@ export function Hero() {
                 Call Kim
               </a>
               <a
-                href="#book"
+                href="/#book"
                 className="btn btn-secondary min-h-14 px-8 text-[1.25rem] sm:w-auto"
               >
                 Request an appointment

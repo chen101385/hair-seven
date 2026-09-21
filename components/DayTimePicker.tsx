@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AvailableDay } from "@/lib/hours";
-import { describeTimes, formatTime12 } from "@/lib/hours";
+import { describeTimes } from "@/lib/hours";
 import type { PickerValue } from "@/lib/types";
 import { FieldError } from "./Field";
 import { ArrowIcon, CheckIcon } from "./icons";
@@ -10,7 +10,7 @@ import { ArrowIcon, CheckIcon } from "./icons";
 /**
  * Buttons, not a calendar widget. No native datetime-local, no date library UI.
  *
- * Step 1 picks one day. Step 2 lets the visitor tap *every* time on that day
+ * Step 1 picks one day. Step 2 lets the visitor tap every broad window that day
  * that would work for them — Kim keeps her appointment book on paper, so she
  * reads the list and confirms whichever one she actually has free. Picking
  * several is the normal case, not an advanced one, so the copy says so plainly
@@ -55,7 +55,7 @@ export function DayTimePicker({
       el.removeEventListener("scroll", syncArrows);
       window.removeEventListener("resize", syncArrows);
     };
-  }, [syncArrows, value.flexible, days.length]);
+  }, [syncArrows, days.length]);
 
   const scrollDays = (direction: -1 | 1) => {
     const el = scroller.current;
@@ -63,10 +63,10 @@ export function DayTimePicker({
     el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
   };
 
-  const toggleSlot = (slot: number) => {
-    const slots = value.slots.includes(slot)
-      ? value.slots.filter((s) => s !== slot)
-      : [...value.slots, slot].sort((a, b) => a - b);
+  const toggleSlot = (start: number) => {
+    const slots = value.slots.includes(start)
+      ? value.slots.filter((slot) => slot !== start)
+      : [...value.slots, start].sort((a, b) => a - b);
     onChange({ ...value, slots });
   };
 
@@ -93,172 +93,130 @@ export function DayTimePicker({
       aria-describedby={error ? `${id}-error` : undefined}
       className="outline-none"
     >
-      {value.flexible ? (
-        <div>
-          <label htmlFor={`${id}-flexible-text`} className="block font-semibold">
-            When would suit you?
-          </label>
-          <p
-            id={`${id}-flexible-text-hint`}
-            className="text-small text-ink/75 mt-1 mb-2"
-          >
-            In your own words — for example, “mornings, any day next week.”
-          </p>
-          <textarea
-            id={`${id}-flexible-text`}
-            aria-describedby={`${id}-flexible-text-hint`}
-            className="field-input"
-            rows={3}
-            value={value.flexibleText}
-            onChange={(event) =>
-              onChange({ ...value, flexibleText: event.target.value })
-            }
-          />
-          <button
-            type="button"
-            className="btn btn-secondary mt-3"
-            onClick={() => onChange({ ...value, flexible: false })}
-          >
-            Pick a day and time instead
-          </button>
+      <p id={`${id}-day-label`} className="font-semibold">
+        Step 1 — pick a day
+      </p>
+
+      <div className="mt-2 flex items-stretch gap-2">
+        <ScrollArrow
+          direction="left"
+          label="Show earlier days"
+          disabled={atStart}
+          onClick={() => scrollDays(-1)}
+        />
+
+        <div
+          ref={scroller}
+          role="radiogroup"
+          aria-labelledby={`${id}-day-label`}
+          className="relative flex min-w-0 flex-1 gap-3 overflow-x-auto px-0.5 py-1"
+        >
+          {days.map((day) => {
+            const inputId = `${id}-day-${day.date}`;
+            return (
+              // `relative` matters: the radio below is sr-only, which is
+              // position:absolute. Without a positioned wrapper its
+              // containing block is the <form>, so it escapes this
+              // scroller's clipping and drags the whole page ~1600px wide.
+              <div key={day.date} className="relative shrink-0">
+                <input
+                  type="radio"
+                  id={inputId}
+                  name={`${id}-day`}
+                  className="choice-input sr-only"
+                  checked={value.date === day.date}
+                  onChange={() =>
+                    // Times belong to a day. Changing the day clears them.
+                    onChange({ ...value, date: day.date, slots: [] })
+                  }
+                />
+                <label htmlFor={inputId} className="choice choice-day">
+                  <CheckIcon className="choice-check h-5 w-5" />
+                  <span className="text-small tracking-wide">
+                    {day.weekdayShort}
+                  </span>
+                  <span className="font-display text-[1.25rem]">
+                    {day.dateLabel}
+                  </span>
+                  <span className="text-small font-normal">{day.hoursLabel}</span>
+                  <span className="sr-only">{day.weekdayLong}</span>
+                </label>
+              </div>
+            );
+          })}
         </div>
-      ) : (
-        <>
-          {/* Step 1 — pick a day */}
-          <p id={`${id}-day-label`} className="font-semibold">
-            Step 1 — pick a day
+
+        <ScrollArrow
+          direction="right"
+          label="Show later days"
+          disabled={atEnd}
+          onClick={() => scrollDays(1)}
+        />
+      </div>
+
+      {selectedDay ? (
+        <div className="mt-6">
+          <p id={`${id}-time-label`} className="font-semibold">
+            Step 2 — choose every time window that works on{" "}
+            {selectedDay.fullLabel}
+          </p>
+          <p id={`${id}-time-hint`} className="mt-1 mb-2">
+            Choose one, several, or all of the windows below. Kim will call or
+            text you to confirm the exact appointment time.
           </p>
 
-          <div className="mt-2 flex items-stretch gap-2">
-            <ScrollArrow
-              direction="left"
-              label="Show earlier days"
-              disabled={atStart}
-              onClick={() => scrollDays(-1)}
-            />
-
-            <div
-              ref={scroller}
-              role="radiogroup"
-              aria-labelledby={`${id}-day-label`}
-              className="relative flex min-w-0 flex-1 gap-3 overflow-x-auto px-0.5 py-1"
-            >
-              {days.map((day) => {
-                const inputId = `${id}-day-${day.date}`;
-                return (
-                  // `relative` matters: the radio below is sr-only, which is
-                  // position:absolute. Without a positioned wrapper its
-                  // containing block is the <form>, so it escapes this
-                  // scroller's clipping and drags the whole page ~1600px wide.
-                  <div key={day.date} className="relative shrink-0">
-                    <input
-                      type="radio"
-                      id={inputId}
-                      name={`${id}-day`}
-                      className="choice-input sr-only"
-                      checked={value.date === day.date}
-                      onChange={() =>
-                        // Times belong to a day. Changing the day clears them.
-                        onChange({ ...value, date: day.date, slots: [] })
-                      }
-                    />
-                    <label htmlFor={inputId} className="choice choice-day">
-                      <CheckIcon className="choice-check h-5 w-5" />
-                      <span className="text-small tracking-wide">
-                        {day.weekdayShort}
-                      </span>
-                      <span className="font-display text-[1.25rem]">
-                        {day.dateLabel}
-                      </span>
+          <div
+            role="group"
+            aria-labelledby={`${id}-time-label`}
+            aria-describedby={`${id}-time-hint`}
+            className="grid gap-3 sm:grid-cols-3"
+          >
+            {selectedDay.slots.map((slot) => {
+              const inputId = `${id}-time-${slot.start}`;
+              return (
+                <div key={slot.start} className="relative">
+                  <input
+                    type="checkbox"
+                    id={inputId}
+                    className="choice-input sr-only"
+                    checked={value.slots.includes(slot.start)}
+                    onChange={() => toggleSlot(slot.start)}
+                  />
+                  <label htmlFor={inputId} className="choice choice-time">
+                    <CheckIcon className="choice-check h-4 w-4" />
+                    <span className="flex flex-col">
+                      <span>{slot.name}</span>
                       <span className="text-small font-normal">
-                        {day.hoursLabel}
+                        {slot.timeLabel}
                       </span>
-                      <span className="sr-only">{day.weekdayLong}</span>
-                    </label>
-                  </div>
-                );
-              })}
-            </div>
-
-            <ScrollArrow
-              direction="right"
-              label="Show later days"
-              disabled={atEnd}
-              onClick={() => scrollDays(1)}
-            />
+                    </span>
+                  </label>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Step 2 — pick every time that works */}
-          {selectedDay ? (
-            <div className="mt-6">
-              <p id={`${id}-time-label`} className="font-semibold">
-                Step 2 — pick every time that works on {selectedDay.fullLabel}
-              </p>
-              <p id={`${id}-time-hint`} className="mt-1 mb-2">
-                Tap as many as you like. Kim will write back and confirm one of
-                them — the more you pick, the easier it is for her to fit you in.
-              </p>
-
-              <div
-                role="group"
-                aria-labelledby={`${id}-time-label`}
-                aria-describedby={`${id}-time-hint`}
-                className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
-              >
-                {selectedDay.slots.map((slot) => {
-                  const inputId = `${id}-time-${slot}`;
-                  return (
-                    <div key={slot} className="relative">
-                      <input
-                        type="checkbox"
-                        id={inputId}
-                        className="choice-input sr-only"
-                        checked={value.slots.includes(slot)}
-                        onChange={() => toggleSlot(slot)}
-                      />
-                      <label htmlFor={inputId} className="choice choice-time">
-                        <CheckIcon className="choice-check h-4 w-4" />
-                        {formatTime12(slot)}
-                      </label>
-                    </div>
-                  );
-                })}
+          <div aria-live="polite" className="mt-4">
+            {count > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded border-2 border-awning/35 bg-tint p-3">
+                <p>
+                  <span className="font-semibold">
+                    You picked {count} {count === 1 ? "window" : "windows"}:
+                  </span>{" "}
+                  {describeTimes(value)}
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-secondary px-4"
+                  onClick={() => onChange({ ...value, slots: [] })}
+                >
+                  Clear times
+                </button>
               </div>
-
-              {/* Says back what they've chosen, and announces changes. */}
-              <div aria-live="polite" className="mt-4">
-                {count > 0 ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded border-2 border-awning/35 bg-tint p-3">
-                    <p>
-                      <span className="font-semibold">
-                        You picked {count} {count === 1 ? "time" : "times"}:
-                      </span>{" "}
-                      {describeTimes(value)}
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn-secondary px-4"
-                      onClick={() => onChange({ ...value, slots: [] })}
-                    >
-                      Clear times
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            className="btn btn-secondary mt-6 w-full sm:w-auto"
-            onClick={() =>
-              onChange({ ...value, flexible: true, date: null, slots: [] })
-            }
-          >
-            I’m flexible / none of these work
-          </button>
-        </>
-      )}
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <FieldError id={id} error={error} />
     </div>

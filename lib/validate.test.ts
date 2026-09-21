@@ -5,7 +5,6 @@ import {
   digitsOnly,
   formatPhone,
   formatPhoneInput,
-  isEmail,
   isPhone,
   validateContact,
 } from "./validate";
@@ -15,8 +14,7 @@ const payload = (over: Partial<ContactPayload> = {}): ContactPayload => ({
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
-  email: "",
-  service: "Haircut",
+  services: ["Haircut"],
   primary: { ...emptyPicker, date: "2026-09-03", slots: [840] },
   notes: "",
   question: "",
@@ -56,25 +54,10 @@ describe("phone handling", () => {
     expect(formatPhoneInput("no digits here")).toBe("");
   });
 
-  it("formats a stored number for the email, and passes odd ones through", () => {
+  it("formats a stored number for notifications, and passes odd ones through", () => {
     expect(formatPhone("6505550147")).toBe("(650) 555-0147");
     expect(formatPhone("16505550147")).toBe("(650) 555-0147");
     expect(formatPhone("  ext 4  ")).toBe("ext 4");
-  });
-});
-
-describe("isEmail", () => {
-  it("accepts ordinary addresses", () => {
-    expect(isEmail("kim@example.com")).toBe(true);
-    expect(isEmail("  ruth.alvarez+salon@mail.example.co.uk  ")).toBe(true);
-  });
-
-  it("rejects the shapes people actually mistype", () => {
-    expect(isEmail("kim@example")).toBe(false); // no TLD
-    expect(isEmail("kim.example.com")).toBe(false); // missing @
-    expect(isEmail("kim@example.c")).toBe(false); // one-letter TLD
-    expect(isEmail("kim @example.com")).toBe(false); // space
-    expect(isEmail("")).toBe(false);
   });
 });
 
@@ -86,9 +69,7 @@ describe("validateContact", () => {
   it("passes a complete question", () => {
     const p = payload({
       formType: "question",
-      replyChannel: "email",
-      phone: "",
-      email: "ruth@example.com",
+      replyChannel: "call",
       primary: { ...emptyPicker },
       question: "Do you do perms?",
     });
@@ -105,15 +86,11 @@ describe("validateContact", () => {
     );
   });
 
-  it("only requires the contact field for the channel they chose", () => {
-    // Chose text, gave no number.
+  it("requires a phone number for either contact method", () => {
     expect(validateContact(payload({ phone: "" }))).toHaveProperty("phone");
-    // Chose text, gave no email — that's fine, she isn't going to email.
-    expect(validateContact(payload({ email: "" }))).not.toHaveProperty("email");
-    // Chose email, gave no address.
-    const byEmail = payload({ replyChannel: "email", phone: "", email: "" });
-    expect(validateContact(byEmail)).toHaveProperty("email");
-    expect(validateContact(byEmail)).not.toHaveProperty("phone");
+    expect(
+      validateContact(payload({ replyChannel: "call", phone: "" })),
+    ).toHaveProperty("phone");
   });
 
   it("requires a day and at least one time on the appointment form", () => {
@@ -125,13 +102,6 @@ describe("validateContact", () => {
         payload({ primary: { ...emptyPicker, date: "2026-09-03", slots: [] } }),
       ),
     ).toHaveProperty("primary");
-  });
-
-  it("accepts a flexible request with no day or time at all", () => {
-    const p = payload({
-      primary: { ...emptyPicker, flexible: true, flexibleText: "any afternoon" },
-    });
-    expect(validateContact(p)).toEqual({});
   });
 
   it("never asks the question form to pick a time", () => {

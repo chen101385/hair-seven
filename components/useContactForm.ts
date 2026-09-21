@@ -52,8 +52,8 @@ export function useContactForm({
   );
 
   /**
-   * Check one field when the visitor leaves it, so a mistyped email or phone
-   * is caught right there instead of at submit time.
+   * Check one field when the visitor leaves it, so a mistyped phone number is
+   * caught right there instead of at submit time.
    *
    * Only fires when the field has something in it. Tabbing past an empty field
    * you haven't reached yet shouldn't scold you — that's submit's job.
@@ -153,9 +153,8 @@ export function emptyPayload(
     name: "",
     replyChannel: null,
     phone: "",
-    email: "",
-    service: "",
-    primary: { date: null, slots: [], flexible: false, flexibleText: "" },
+    services: [],
+    primary: { date: null, slots: [] },
     notes: "",
     question: "",
     company: "",

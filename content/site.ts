@@ -13,7 +13,6 @@ export const site = {
 
   phone: "(650) 949-0796",
   phoneHref: "+16509490796",
-  email: "PLACEHOLDER@example.com",
 
   address: {
     street: "1040 Grant Rd, Ste 150",
@@ -37,11 +36,11 @@ export const site = {
 
   // Hours drive BOTH the Hours section and the booking time slots. One source of
   // truth. Use 24h "HH:MM" internally; render as 12h with AM/PM. null = closed.
-  // Open seven days: 10-6 Monday through Saturday, 10-5 on Sunday.
+  // Kim is closed Monday and works one 2–6 PM window on Tuesday.
   hours: [
     { day: "Sunday", open: "10:00", close: "17:00" },
-    { day: "Monday", open: "10:00", close: "18:00" },
-    { day: "Tuesday", open: "10:00", close: "18:00" },
+    { day: "Monday", open: null, close: null },
+    { day: "Tuesday", open: "14:00", close: "18:00" },
     { day: "Wednesday", open: "10:00", close: "18:00" },
     { day: "Thursday", open: "10:00", close: "18:00" },
     { day: "Friday", open: "10:00", close: "18:00" },
@@ -49,8 +48,6 @@ export const site = {
   ],
 
   booking: {
-    slotMinutes: 30, // interval between offered times
-    lastSlotBufferMin: 60, // stop offering slots this long before close
     leadTimeHours: 12, // no requests for slots sooner than this
     daysAhead: 21, // how far out the day picker runs
     blackoutDates: [] as string[], // "2026-11-26" etc — vacations, holidays
@@ -64,32 +61,24 @@ export const site = {
     {
       name: "Haircut",
       description: "Men, women, and children.",
-      priceLow: null, // PLACEHOLDER — get real prices from Kim
-      priceHigh: null, // PLACEHOLDER
       note: "",
       items: [],
     },
     {
       name: "Hair styling",
       description: "Men, women, and children.",
-      priceLow: null, // PLACEHOLDER
-      priceHigh: null, // PLACEHOLDER
       note: "",
       items: [],
     },
     {
       name: "Hair coloring",
-      description: "PLACEHOLDER — ask Kim what she offers: single process, highlights, grey coverage?",
-      priceLow: null, // PLACEHOLDER
-      priceHigh: null, // PLACEHOLDER
+      description: "",
       note: "",
       items: [],
     },
     {
       name: "Waxing",
       description: "",
-      priceLow: null, // PLACEHOLDER — likely priced per area
-      priceHigh: null, // PLACEHOLDER
       note: "",
       items: [
         "Arms",
@@ -107,15 +96,13 @@ export const site = {
   ] as ReadonlyArray<{
     name: string;
     description: string;
-    priceLow: number | null;
-    priceHigh: number | null;
     note: string;
     /** Sub-items listed under the service, e.g. waxing areas. */
     items: readonly string[];
   }>,
 
   pricingNote:
-    "Price depends on length, thickness, and time in the chair. Give Kim a call and she'll quote you — and she'll always confirm the price with you before she starts.",
+    "Pricing is handled directly by Kim. Send an appointment request or give her a call, and she’ll discuss the service and price with you personally.",
 
   about: {
     heading: "About Kim",
@@ -135,9 +122,9 @@ export const site = {
     },
   },
 
-  // Where form submissions are sent is NOT set here — it lives in .env.local
-  // (NOTIFY_BOOKING_EMAIL and NOTIFY_QUESTIONS_EMAIL), so the two routes can
-  // point at different inboxes without a code change. See the README.
+  // Twilio credentials live in .env.local. Submissions text Kim; they are
+  // never emailed. Kim's number is the default destination (site.phoneHref)
+  // unless NOTIFY_MOBILE_NUMBER overrides it.
 } as const;
 
 export type Site = typeof site;

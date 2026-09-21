@@ -8,9 +8,12 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "punchlist": "node scripts/punchlist.mjs"
+    "punchlist": "node scripts/punchlist.mjs",
+    "sms:preview": "tsx scripts/sms-preview.ts",
+    "sms:campaign": "tsx scripts/sms-campaign.ts"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.4",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
@@ -21,6 +24,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }

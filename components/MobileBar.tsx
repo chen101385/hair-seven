@@ -21,7 +21,7 @@ export function MobileBar() {
           Call
         </a>
         <a
-          href="#book"
+          href="/#book"
           className="btn btn-secondary flex-1 px-3 text-[1.0625rem] leading-tight"
         >
           Request appointment

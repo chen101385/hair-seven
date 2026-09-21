@@ -77,6 +77,81 @@ body {
   }
 }
 
+/* Kim's private confirmation page is designed for one-handed phone use and
+   comfortable tablet use: large controls, one decision per screen. */
+.kim-page {
+  min-height: 100svh;
+  background: var(--tint);
+}
+
+.kim-card {
+  border: 2px solid rgba(34, 48, 58, 0.2);
+  border-radius: 0.75rem;
+  background: var(--paper);
+  padding: 1.25rem;
+  box-shadow: 0 8px 24px rgba(34, 48, 58, 0.08);
+}
+
+@media (min-width: 640px) {
+  .kim-card {
+    padding: 2rem;
+  }
+}
+
+.kim-action {
+  display: flex;
+  min-height: 7rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border: 3px solid var(--awning);
+  border-radius: 0.75rem;
+  background: #fff;
+  color: var(--awning-dark);
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.kim-action span {
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.kim-action-yes {
+  background: var(--awning);
+  color: var(--paper);
+}
+
+.kim-choice {
+  min-height: 4rem;
+  border: 2px solid rgba(34, 48, 58, 0.35);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.625rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.kim-choice-selected {
+  border-color: var(--awning);
+  background: var(--awning);
+  color: var(--paper);
+}
+
+.kim-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.kim-back {
+  min-height: 3rem;
+  padding: 0 0.5rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
 h1,
 h2,
 h3 {
@@ -257,9 +332,9 @@ select.field-input {
 /* ---------------------------------------------------------------------------
    Choice controls: day cards, time slots, reply-channel cards.
 
-   Each is a real <input type="radio"> visually hidden behind a styled <label>.
-   That buys arrow-key navigation, "3 of 15" announcements, and native form
-   semantics for free — none of which a div-with-onClick gives you.
+   Each is a real radio or checkbox visually hidden behind a styled <label>.
+   That buys keyboard navigation and native form semantics for free — none of
+   which a div-with-onClick gives you.
    --------------------------------------------------------------------------- */
 .choice {
   position: relative;
@@ -321,11 +396,16 @@ select.field-input {
   padding: 0.75rem 0.625rem;
 }
 
-/* Step 2 — time slots. 56px tall minimum, 12px gaps come from the grid. */
+/* Step 2 — broad availability windows. */
 .choice-time {
-  min-height: 3.5rem;
+  min-height: 4.5rem;
   font-size: 1.1875rem;
-  white-space: nowrap;
+}
+
+.choice-service {
+  min-height: 3.5rem;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 /* Reply channel. Larger, with room for the explanatory line underneath. */

@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { site } from "@/content/site";
 import { getAvailableDays } from "@/lib/hours";
-import { buildEmail, buildVisitorReceipt, deliver, deliverReceipt } from "@/lib/notify";
+import {
+  bookingResponseUrl,
+  createBookingRequest,
+} from "@/lib/booking-requests";
+import { buildSms, deliver } from "@/lib/notify";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
-import { emptyPicker } from "@/lib/types";
+import {
+  emptyPicker,
+  MAX_NOTES_LENGTH,
+  MAX_QUESTION_LENGTH,
+} from "@/lib/types";
 import type { ContactPayload, ContactResponse, PickerValue } from "@/lib/types";
 import { validateContact } from "@/lib/validate";
 
-/** node runtime: the stub writer appends to .submissions.log. */
+/** node runtime: SMS delivery (or stub print) and .submissions.log. */
 export const runtime = "nodejs";
 
 /** Minimum time on page, in ms. A human cannot fill this form in three seconds. */
@@ -16,19 +24,16 @@ const MIN_ELAPSED_MS = 3_000;
 const MAX_LENGTHS: Record<string, number> = {
   name: 120,
   phone: 40,
-  email: 200,
-  service: 120,
-  notes: 4_000,
-  question: 4_000,
-  flexibleText: 1_000,
+  notes: MAX_NOTES_LENGTH,
+  question: MAX_QUESTION_LENGTH,
 };
 
 function str(value: unknown, max: number): string {
   return typeof value === "string" ? value.slice(0, max) : "";
 }
 
-/** A day has at most 48 half-hour slots; anything past that is not a person. */
-const MAX_SLOTS = 48;
+/** No working day offers more than three broad availability windows. */
+const MAX_SLOTS = 3;
 
 function picker(value: unknown): PickerValue {
   if (typeof value !== "object" || value === null) return { ...emptyPicker };
@@ -48,8 +53,6 @@ function picker(value: unknown): PickerValue {
   return {
     date: typeof v.date === "string" ? v.date.slice(0, 10) : null,
     slots,
-    flexible: v.flexible === true,
-    flexibleText: str(v.flexibleText, MAX_LENGTHS.flexibleText),
   };
 }
 
@@ -58,16 +61,30 @@ function normalize(raw: unknown): ContactPayload {
     string,
     unknown
   >;
+  const validServices = new Set(site.services.map((service) => service.name));
+  const rawServices = Array.isArray(r.services)
+    ? r.services
+    : typeof r.service === "string"
+      ? [r.service]
+      : [];
+  const services = Array.from(
+    new Set(
+      rawServices.filter(
+        (service): service is string =>
+          typeof service === "string" && validServices.has(service),
+      ),
+    ),
+  );
+
   return {
     formType: r.formType === "question" ? "question" : "appointment",
     name: str(r.name, MAX_LENGTHS.name),
     replyChannel:
-      r.replyChannel === "text" || r.replyChannel === "email"
+      r.replyChannel === "text" || r.replyChannel === "call"
         ? r.replyChannel
         : null,
     phone: str(r.phone, MAX_LENGTHS.phone),
-    email: str(r.email, MAX_LENGTHS.email),
-    service: str(r.service, MAX_LENGTHS.service),
+    services,
     primary: picker(r.primary),
     notes: str(r.notes, MAX_LENGTHS.notes),
     question: str(r.question, MAX_LENGTHS.question),
@@ -82,11 +99,12 @@ function normalize(raw: unknown): ContactPayload {
  * than trusting whatever the browser sent.
  */
 function slotsStillOffered(value: PickerValue): boolean {
-  if (value.flexible) return true;
   if (!value.date || value.slots.length === 0) return false;
   const day = getAvailableDays().find((d) => d.date === value.date);
   if (!day) return false;
-  return value.slots.every((slot) => day.slots.includes(slot));
+  return value.slots.every((slot) =>
+    day.slots.some((offered) => offered.start === slot),
+  );
 }
 
 function fail(
@@ -149,11 +167,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const mail = buildEmail(payload);
-    await deliver(mail, payload);
-    // Best-effort, and only when they gave us an address. Kim already has the
-    // request by this point, so a failed receipt must not fail the submission.
-    await deliverReceipt(buildVisitorReceipt(payload));
+    const manageUrl =
+      payload.formType === "appointment"
+        ? bookingResponseUrl(
+            request,
+            (await createBookingRequest(payload)).token,
+          )
+        : undefined;
+    await deliver(buildSms(payload, { manageUrl }), payload);
   } catch (error) {
     console.error("[hair-seven] delivery failed:", error);
     return fail(
