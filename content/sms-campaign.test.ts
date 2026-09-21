@@ -12,5 +12,8 @@ describe("A2P campaign samples", () => {
     expect(campaign.messages[0]?.body).toMatch(/STOP/);
     expect(campaign.messages[1]?.body).toMatch(/STOP/);
     expect(campaign.messages[2]?.body).toMatch(/HELP/);
+    for (const sample of campaign.messages) {
+      expect(sample.body).not.toMatch(/data rates/i);
+    }
   });
 });

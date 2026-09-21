@@ -116,6 +116,7 @@ describe("buildSms", () => {
     expect(confirmed.to).toBe("+16505550147");
     expect(confirmed.body).toContain("confirmed Thursday, Sep 3 at 3:30 PM");
     expect(confirmed.body).toContain("Reply STOP to opt out, HELP for help");
+    expect(confirmed.body).not.toMatch(/data rates/i);
     expect(alternatives.body).toContain("Kim can offer");
     expect(alternatives.body).toContain("Tue Sep 8 2p-6p");
     expect(alternatives.body).toContain("Wed Sep 9 10a-12p");

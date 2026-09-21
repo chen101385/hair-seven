@@ -188,8 +188,7 @@ export function buildSms(
 }
 
 /** Appended to every customer SMS. Kim's Hair7 BOOK/Q texts do not include this. */
-export const CUSTOMER_SMS_OPT_OUT =
-  "Reply STOP to opt out, HELP for help. Msg and data rates may apply.";
+export const CUSTOMER_SMS_OPT_OUT = "Reply STOP to opt out, HELP for help.";
 
 function customerSms(to: string, message: string): Sms {
   return {
