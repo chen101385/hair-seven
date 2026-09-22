@@ -16,6 +16,7 @@ const sampleCustomer: ContactPayload = {
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
+  smsConsent: true,
   services: ["Haircut", "Hair coloring"],
   primary: { ...emptyPicker, date: "2026-09-03", slots: [600, 900] },
   notes: "",
@@ -56,6 +57,7 @@ export const campaign = {
     "Campaign samples are the texts customers receive. Do not submit Hair7 BOOK or Hair7 Q; those go to Kim.",
     "Enable Twilio Advanced Opt-Out so STOP/START/HELP are handled even without a webhook.",
     "Opt-out lives in every customer SMS from this app. Kim's notification texts do not include STOP.",
-    "Message and data rates stay on the website form and /privacy, not in the SMS body.",
+    "Message and data rates stay on the website form, /terms, and /privacy, not in the SMS body.",
+    "Opt-in is a web form at https://hair7salon.com/book: Text me, mobile number, unchecked consent checkbox, then submit. Carrier forms reject fragment URLs, so link /book rather than /#book.",
   ],
 } as const;

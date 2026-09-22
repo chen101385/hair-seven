@@ -88,6 +88,7 @@ async function recordSubmission(sms: Sms, payload: ContactPayload) {
     formType: payload.formType,
     to: sms.to || null,
     replyChannel: payload.replyChannel,
+    smsConsent: payload.smsConsent,
     name: payload.name.trim(),
     phone: payload.phone.trim() || null,
     services: payload.services.length > 0 ? payload.services : null,

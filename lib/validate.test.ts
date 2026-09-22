@@ -14,6 +14,7 @@ const payload = (over: Partial<ContactPayload> = {}): ContactPayload => ({
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
+  smsConsent: true,
   services: ["Haircut"],
   primary: { ...emptyPicker, date: "2026-09-03", slots: [840] },
   notes: "",
@@ -91,6 +92,15 @@ describe("validateContact", () => {
     expect(
       validateContact(payload({ replyChannel: "call", phone: "" })),
     ).toHaveProperty("phone");
+  });
+
+  it("requires an unchecked SMS consent box when they want a text", () => {
+    expect(validateContact(payload({ smsConsent: false }))).toHaveProperty(
+      "smsConsent",
+    );
+    expect(
+      validateContact(payload({ replyChannel: "call", smsConsent: false })),
+    ).not.toHaveProperty("smsConsent");
   });
 
   it("requires a day and at least one time on the appointment form", () => {

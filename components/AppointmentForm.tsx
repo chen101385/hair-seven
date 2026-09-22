@@ -19,7 +19,7 @@ import { emptyPayload, useContactForm } from "./useContactForm";
 const ID = "appt";
 
 /** Visual top-to-bottom order, so a failed submit lands on the first problem. */
-const FIELD_ORDER = ["name", "primary", "replyChannel", "phone"];
+const FIELD_ORDER = ["name", "primary", "replyChannel", "phone", "smsConsent"];
 
 /**
  * This is a request, not a live booking. Nothing here may imply an instant
@@ -37,6 +37,8 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         return `${ID}-channel-text`;
       case "phone":
         return `${ID}-phone`;
+      case "smsConsent":
+        return `${ID}-smsConsent`;
       default:
         return null;
     }
@@ -132,10 +134,22 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         channel={values.replyChannel}
         phone={values.phone}
         errors={errors}
-        onChannelChange={(next) => set("replyChannel", next)}
+        onChannelChange={(next) => {
+          set("replyChannel", next);
+          set("smsConsent", false);
+        }}
         onPhoneChange={(next) => set("phone", next)}
         onBlurField={checkOnBlur}
       />
+
+      {values.replyChannel === "text" ? (
+        <SmsConsentNote
+          id={ID}
+          checked={values.smsConsent}
+          error={errors.smsConsent}
+          onChange={(next) => set("smsConsent", next)}
+        />
+      ) : null}
 
       <Field
         id={`${ID}-notes`}
@@ -170,14 +184,17 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
           className="btn btn-primary min-h-14 w-full text-[1.25rem]"
           disabled={sending}
         >
-          {sending ? "Sending…" : "Send request"}
+          {sending
+            ? "Sending…"
+            : values.replyChannel === "text"
+              ? "Yes, text me about this request"
+              : "Send request"}
         </button>
 
         <p className="mt-3">
           Nothing is booked yet. Kim will call or text within{" "}
           {site.booking.replyWindow} to confirm the exact appointment time.
         </p>
-        <SmsConsentNote />
       </div>
     </form>
   );

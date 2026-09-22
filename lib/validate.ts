@@ -70,6 +70,11 @@ export function validateContact(p: ContactPayload): Record<string, string> {
         : "Please enter a phone number so Kim can call you back.";
   }
 
+  if (p.replyChannel === "text" && p.smsConsent !== true) {
+    errors.smsConsent =
+      "Please check the box to agree to appointment texts from Hair 7.";
+  }
+
   if (p.formType === "appointment") {
     if (!p.primary.date) {
       errors.primary = "Please pick a day.";

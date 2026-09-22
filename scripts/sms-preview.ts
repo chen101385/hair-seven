@@ -23,6 +23,7 @@ const base: ContactPayload = {
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
+  smsConsent: true,
   services: ["Haircut", "Hair coloring"],
   primary: {
     ...emptyPicker,
