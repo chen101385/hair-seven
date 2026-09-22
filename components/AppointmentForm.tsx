@@ -142,14 +142,13 @@ export function AppointmentForm({ days }: { days: AvailableDay[] }) {
         onBlurField={checkOnBlur}
       />
 
-      {values.replyChannel === "text" ? (
-        <SmsConsentNote
-          id={ID}
-          checked={values.smsConsent}
-          error={errors.smsConsent}
-          onChange={(next) => set("smsConsent", next)}
-        />
-      ) : null}
+      <SmsConsentNote
+        id={ID}
+        channel={values.replyChannel}
+        checked={values.smsConsent}
+        error={errors.smsConsent}
+        onChange={(next) => set("smsConsent", next)}
+      />
 
       <Field
         id={`${ID}-notes`}

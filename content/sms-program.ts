@@ -14,4 +14,6 @@ export const smsProgram = {
     "Reply HELP for help or STOP to cancel at any time.",
   noShare:
     "We do not share your number with third parties for their marketing.",
+  callerNote:
+    "You asked Kim to call, so this box is optional. Check it only if you also want her confirmation by text.",
 } as const;
