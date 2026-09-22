@@ -16,5 +16,6 @@ describe("privacy policy SMS language", () => {
     expect(body).toMatch(/marketing/i);
     expect(body).toMatch(/Twilio/);
     expect(privacy.path).toBe("/privacy");
+    expect(body).toMatch(/never pre-checked/i);
   });
 });

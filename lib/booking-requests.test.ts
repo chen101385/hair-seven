@@ -14,6 +14,7 @@ const payload: ContactPayload = {
   name: "Ruth Alvarez",
   replyChannel: "text",
   phone: "(650) 555-0147",
+  smsConsent: true,
   services: ["Haircut"],
   primary: { ...emptyPicker, date: "2026-09-23", slots: [600] },
   notes: "",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { privacy } from "@/content/privacy";
 import { site } from "@/content/site";
+import { terms } from "@/content/terms";
 import { formatDayHours } from "@/lib/hours";
 import { AddressLines } from "./AddressLines";
 import { PhoneIcon, PinIcon } from "./icons";
@@ -55,6 +56,13 @@ export function Footer() {
         <p className="mt-10 text-small text-paper/80">
           © {new Date().getFullYear()} {site.name}. {site.address.city},{" "}
           {site.address.state}.{" "}
+          <Link
+            href={terms.path}
+            className="font-semibold underline underline-offset-4 text-paper"
+          >
+            Terms
+          </Link>
+          {" · "}
           <Link
             href={privacy.path}
             className="font-semibold underline underline-offset-4 text-paper"

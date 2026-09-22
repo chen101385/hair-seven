@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { privacy } from "@/content/privacy";
+import { terms } from "@/content/terms";
 
 const baseUrl = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
@@ -15,6 +16,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}${privacy.path}`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}${terms.path}`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,

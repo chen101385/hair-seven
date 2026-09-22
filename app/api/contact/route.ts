@@ -84,6 +84,7 @@ function normalize(raw: unknown): ContactPayload {
         ? r.replyChannel
         : null,
     phone: str(r.phone, MAX_LENGTHS.phone),
+    smsConsent: r.smsConsent === true,
     services,
     primary: picker(r.primary),
     notes: str(r.notes, MAX_LENGTHS.notes),

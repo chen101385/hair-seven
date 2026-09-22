@@ -12,7 +12,7 @@ import { SubmitError } from "./SubmitError";
 import { emptyPayload, useContactForm } from "./useContactForm";
 
 const ID = "ask";
-const FIELD_ORDER = ["name", "replyChannel", "phone", "question"];
+const FIELD_ORDER = ["name", "replyChannel", "phone", "smsConsent", "question"];
 
 /** Deliberately short. No date picker, no service list. */
 export function QuestionForm() {
@@ -24,6 +24,8 @@ export function QuestionForm() {
         return `${ID}-channel-text`;
       case "phone":
         return `${ID}-phone`;
+      case "smsConsent":
+        return `${ID}-smsConsent`;
       case "question":
         return `${ID}-question`;
       default:
@@ -80,10 +82,22 @@ export function QuestionForm() {
         channel={values.replyChannel}
         phone={values.phone}
         errors={errors}
-        onChannelChange={(next) => set("replyChannel", next)}
+        onChannelChange={(next) => {
+          set("replyChannel", next);
+          set("smsConsent", false);
+        }}
         onPhoneChange={(next) => set("phone", next)}
         onBlurField={checkOnBlur}
       />
+
+      {values.replyChannel === "text" ? (
+        <SmsConsentNote
+          id={ID}
+          checked={values.smsConsent}
+          error={errors.smsConsent}
+          onChange={(next) => set("smsConsent", next)}
+        />
+      ) : null}
 
       <Field id={`${ID}-question`} label="Your question" error={errors.question}>
         <textarea
@@ -110,11 +124,14 @@ export function QuestionForm() {
           className="btn btn-primary min-h-14 w-full text-[1.25rem]"
           disabled={sending}
         >
-          {sending ? "Sending…" : "Send message"}
+          {sending
+            ? "Sending…"
+            : values.replyChannel === "text"
+              ? "Yes, text me about this request"
+              : "Send message"}
         </button>
 
         <p className="mt-3">Kim usually replies within a day or two.</p>
-        <SmsConsentNote />
       </div>
     </form>
   );

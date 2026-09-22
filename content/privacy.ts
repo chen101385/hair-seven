@@ -6,7 +6,7 @@
 export const privacy = {
   path: "/privacy",
   title: "Privacy Policy",
-  updated: "September 21, 2026",
+  updated: "September 22, 2026",
   sections: [
     {
       heading: "Who we are",
@@ -24,7 +24,7 @@ export const privacy = {
       heading: "How we use your phone number for SMS",
       paragraphs: [
         "We use your phone number to contact you about the request you just sent: to confirm, reschedule, or answer a question. Hair 7 sends transactional SMS for that purpose. Message frequency varies. For a typical booking you may receive one text acknowledging the request or confirming a time, and sometimes a follow-up with alternative times. We do not send marketing texts, promotions, or recurring campaigns.",
-        "Submitting the form is your consent to receive those SMS messages from Hair 7. Consent is not a condition of buying a haircut or any other service. You can always call the salon instead.",
+        "You opt in by choosing “Text me,” entering your mobile number, checking the SMS consent box (it is never pre-checked), and submitting the form. Consent is not a condition of buying a haircut or any other service. You can always call the salon instead.",
       ],
     },
     {

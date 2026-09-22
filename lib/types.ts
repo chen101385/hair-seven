@@ -26,6 +26,8 @@ export type ContactPayload = {
   name: string;
   replyChannel: ReplyChannel | null;
   phone: string;
+  /** Express SMS opt-in. Always starts false; required only when texting. */
+  smsConsent: boolean;
 
   // Appointment only
   services: string[];
