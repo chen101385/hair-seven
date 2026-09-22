@@ -72,7 +72,7 @@ export function validateContact(p: ContactPayload): Record<string, string> {
 
   if (p.replyChannel === "text" && p.smsConsent !== true) {
     errors.smsConsent =
-      "Please check the box to agree to appointment texts. It is not pre-checked.";
+      "Please check the box to agree to appointment texts from Hair 7.";
   }
 
   if (p.formType === "appointment") {
