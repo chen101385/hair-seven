@@ -58,6 +58,6 @@ export const campaign = {
     "Enable Twilio Advanced Opt-Out so STOP/START/HELP are handled even without a webhook.",
     "Opt-out lives in every customer SMS from this app. Kim's notification texts do not include STOP.",
     "Message and data rates stay on the website form, /terms, and /privacy, not in the SMS body.",
-    "Opt-in is a web form at https://hair7salon.com/#book: Text me, mobile number, unchecked consent checkbox, then submit.",
+    "Opt-in is a web form at https://hair7salon.com/book: Text me, mobile number, unchecked consent checkbox, then submit. Carrier forms reject fragment URLs, so link /book rather than /#book.",
   ],
 } as const;
