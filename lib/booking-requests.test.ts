@@ -46,7 +46,7 @@ describe("durable Redis credentials", () => {
 describe("local booking request storage", () => {
   it("creates an unguessable request and persists its decision", async () => {
     const record = await createBookingRequest(payload);
-    expect(record.token).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    expect(record.token).toMatch(/^[A-Za-z0-9_-]{16}$/);
     expect((await getBookingRequest(record.token))?.status).toBe("pending");
 
     record.status = "completed";

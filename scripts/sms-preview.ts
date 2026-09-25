@@ -40,7 +40,7 @@ const examples = [
   {
     label: "Booking link to Kim",
     sms: buildSms(base, {
-      manageUrl: "https://hair7.example/kim/abcdefghijklmnopqrstuvwx",
+      manageUrl: "https://hair7salon.com/kim/abcdefghijklmnop",
     }),
   },
   {
