@@ -49,7 +49,7 @@ npm run sms:campaign
 ```
 
 Prints paste-ready A2P 10DLC sample messages and the campaign description.
-Customer texts include STOP/HELP. Kim's Hair7 BOOK / Hair7 Q notices are
+Customer texts include STOP/HELP. Kim's booking and question notices are
 internal and should not be submitted as campaign samples.
 
 ```bash
@@ -193,7 +193,10 @@ automatically. **Those environments must keep that store connected**; serverless
 memory does not persist reliably between the booking submission and Kim opening
 her link.
 
-An appointment SMS starts with `Hair7 BOOK` and includes a private, random link.
+An appointment SMS starts with `Hair 7 booking` and includes a private, random
+link. It is written in plain words (`Text (650) 555-0147`, `12pm-3pm`,
+`Haircut, Coloring`) and only falls back to abbreviations when three windows
+and several services would push it past one 160-character text.
 Kim opens it on her phone or tablet, taps Yes and an exact time, or taps No and
 up to three alternative windows. The app sends the customer a fixed English
 message. Links expire after seven days and can only be completed once.

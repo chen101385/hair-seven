@@ -1,5 +1,5 @@
 /**
- * The text Kim actually receives. Kept on GSM-7 so a booking without notes
+ * The text Kim actually receives. Kept on GSM-7 so a booking with its link
  * stays one 160-character SMS. A booking is hard-capped at two concatenated
  * GSM-7 segments (306 characters), including notes.
  */
@@ -8,6 +8,7 @@ import { site } from "@/content/site";
 import {
   formatDateLabel,
   formatFullDateLabel,
+  formatTimeCompact,
   generateAvailabilityWindows,
   weekdayIndex,
 } from "./hours";
@@ -72,17 +73,22 @@ function formatSmsTime(minutes: number): string {
   return m === 0 ? `${h12}${suffix}` : `${h12}:${String(m).padStart(2, "0")}${suffix}`;
 }
 
-export function describeWindowsSms(picker: PickerValue): string {
+/** "10am-12pm, 12pm-3pm", or "10a-12p, 12p-3p" when space is short. */
+export function describeWindowsSms(
+  picker: PickerValue,
+  compact = false,
+): string {
   if (!picker.date || picker.slots.length === 0) return "-";
   const dayHours = site.hours[weekdayIndex(picker.date)];
   if (!dayHours?.open || !dayHours.close) return "-";
   const windows = generateAvailabilityWindows(dayHours.open, dayHours.close);
+  const time = compact ? formatSmsTime : formatTimeCompact;
 
   return picker.slots
     .map((start) => {
       const window = windows.find((candidate) => candidate.start === start);
-      if (!window) return formatSmsTime(start);
-      return `${formatSmsTime(window.start)}-${formatSmsTime(window.end)}`;
+      if (!window) return time(start);
+      return `${time(window.start)}-${time(window.end)}`;
     })
     .join(", ");
 }
@@ -95,32 +101,52 @@ function fit(text: string, max: number): string {
 }
 
 const SERVICE_SMS_NAMES: Record<string, string> = {
+  Haircut: "Haircut",
+  "Hair styling": "Styling",
+  "Hair coloring": "Coloring",
+  Waxing: "Waxing",
+};
+
+const SERVICE_SMS_SHORT: Record<string, string> = {
   Haircut: "Cut",
   "Hair styling": "Style",
   "Hair coloring": "Color",
   Waxing: "Wax",
 };
 
-function describeServicesSms(services: string[]): string {
-  if (services.length === 0) return "Svc ?";
-  return `Svc ${services
-    .map((service) => SERVICE_SMS_NAMES[service] ?? fit(service, 8))
-    .join("/")}`;
+function describeServicesSms(services: string[], compact = false): string {
+  if (services.length === 0) return compact ? "Svc ?" : "Service not chosen";
+  const names = compact ? SERVICE_SMS_SHORT : SERVICE_SMS_NAMES;
+  return services
+    .map((service) => names[service] ?? fit(service, compact ? 8 : 12))
+    .join(", ");
 }
 
-function packAppointment(name: string, payload: ContactPayload): string {
-  const reply = `${payload.replyChannel === "call" ? "C" : "T"} ${toGsm7(
+/**
+ * How far to abbreviate. 0 is the text Kim should normally get. The link line
+ * is fixed at ~50 characters, so three windows and several services can push
+ * past one segment; services shorten first, then times, then the name.
+ */
+type Density = 0 | 1 | 2;
+const DENSITIES: readonly Density[] = [0, 1, 2];
+
+function packAppointment(
+  name: string,
+  payload: ContactPayload,
+  density: Density,
+): string {
+  const reply = `${payload.replyChannel === "call" ? "Call" : "Text"} ${toGsm7(
     formatPhone(payload.phone),
   )}`;
   const day = payload.primary.date ? formatSmsDate(payload.primary.date) : "-";
 
   return [
-    "Hair7 BOOK",
+    "Hair 7 booking",
     name,
     reply,
     day,
-    describeWindowsSms(payload.primary),
-    describeServicesSms(payload.services),
+    describeWindowsSms(payload.primary, density >= 2),
+    describeServicesSms(payload.services, density >= 1),
   ].join("\n");
 }
 
@@ -130,18 +156,22 @@ export function appointmentSmsBase(
   maxLength: number = SMS_SEGMENT_LENGTH,
 ): string {
   const fullName = toGsm7(payload.name.trim()) || "?";
-  let body = packAppointment(fullName, payload);
-  if (body.length <= maxLength) return body;
+  let body = "";
+  for (const density of DENSITIES) {
+    body = packAppointment(fullName, payload, density);
+    if (body.length <= maxLength) return body;
+  }
 
+  // Everything else is already compact, so the name is the last thing to give.
   // Always shorten the original name with a trailing "..." — never slice the
   // packed message, which could cut a word in half with no ellipsis.
   let allowed = Math.max(4, fullName.length - (body.length - maxLength));
   let name = fit(fullName, allowed);
-  body = packAppointment(name, payload);
+  body = packAppointment(name, payload, 2);
   while (body.length > maxLength && allowed > 4) {
     allowed -= 1;
     name = fit(fullName, allowed);
-    body = packAppointment(name, payload);
+    body = packAppointment(name, payload, 2);
   }
   return body;
 }
@@ -173,10 +203,12 @@ export function buildSms(
     };
   }
 
-  const reply = `${payload.replyChannel === "call" ? "C" : "T"} ${toGsm7(
+  const reply = `${payload.replyChannel === "call" ? "Call" : "Text"} ${toGsm7(
     formatPhone(payload.phone),
   )}`;
-  const prefix = ["Hair7 Q", toGsm7(payload.name.trim()), reply].join("\n");
+  const prefix = ["Hair 7 question", toGsm7(payload.name.trim()), reply].join(
+    "\n",
+  );
   const question = fit(
     payload.question,
     Math.max(0, SMS_MAX_LENGTH - prefix.length - 2),
@@ -187,7 +219,7 @@ export function buildSms(
   };
 }
 
-/** Appended to every customer SMS. Kim's Hair7 BOOK/Q texts do not include this. */
+/** Appended to every customer SMS. Kim's booking/question texts do not include this. */
 export const CUSTOMER_SMS_OPT_OUT = "Reply STOP to opt out, HELP for help.";
 
 function customerSms(to: string, message: string): Sms {
