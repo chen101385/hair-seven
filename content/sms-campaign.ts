@@ -54,7 +54,7 @@ export const campaign = {
     },
   ],
   notes: [
-    "Campaign samples are the texts customers receive. Do not submit Hair7 BOOK or Hair7 Q; those go to Kim.",
+    "Campaign samples are the texts customers receive. Do not submit the Hair 7 booking or Hair 7 question texts; those go to Kim.",
     "Enable Twilio Advanced Opt-Out so STOP/START/HELP are handled even without a webhook.",
     "Opt-out lives in every customer SMS from this app. Kim's notification texts do not include STOP.",
     "Message and data rates stay on the website form, /terms, and /privacy, not in the SMS body.",

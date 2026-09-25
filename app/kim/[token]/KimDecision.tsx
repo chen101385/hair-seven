@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { AvailableDay } from "@/lib/hours";
+import type { KimOfferDay } from "@/lib/hours";
 import type {
   AlternativeWindow,
   BookingDecision,
@@ -24,18 +24,19 @@ export function KimDecision({
   decision,
   request,
   exactTimes,
-  availableDays,
+  offerDays,
 }: {
   token: string;
   status: "pending" | "completed";
   decision?: BookingDecision;
   request: RequestSummary;
   exactTimes: { value: string; label: string }[];
-  availableDays: AvailableDay[];
+  offerDays: KimOfferDay[];
 }) {
   const [mode, setMode] = useState<"confirm" | "alternatives" | null>(null);
   const [exactTime, setExactTime] = useState("");
   const [alternatives, setAlternatives] = useState<AlternativeWindow[]>([]);
+  const [offerDate, setOfferDate] = useState(offerDays[0]?.date ?? "");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<string | null>(
     status === "completed"
@@ -181,65 +182,16 @@ export function KimDecision({
       ) : null}
 
       {mode === "alternatives" ? (
-        <section className="kim-card">
-          <button type="button" className="kim-back" onClick={() => setMode(null)}>
-            ← Back
-          </button>
-          <h2 className="mt-3">Choose up to 3 alternatives</h2>
-          <p className="mt-1 text-ink/75">
-            Pick the days and time windows Kim can offer.
-          </p>
-          <div className="mt-5 space-y-5">
-            {availableDays.map((day) => (
-              <fieldset key={day.date}>
-                <legend className="font-semibold">
-                  {day.weekdayLong}, {day.dateLabel}
-                </legend>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  {day.slots.map((slot) => {
-                    const selected = alternatives.some(
-                      (option) =>
-                        option.date === day.date &&
-                        option.start === slot.start,
-                    );
-                    return (
-                      <button
-                        key={slot.start}
-                        type="button"
-                        className={`kim-choice ${
-                          selected ? "kim-choice-selected" : ""
-                        }`}
-                        disabled={!selected && alternatives.length >= 3}
-                        onClick={() =>
-                          chooseAlternative({
-                            date: day.date,
-                            start: slot.start,
-                          })
-                        }
-                      >
-                        <span>{slot.name}</span>
-                        <span className="block text-small font-normal">
-                          {slot.timeLabel}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            ))}
-          </div>
-          <p aria-live="polite" className="mt-5 font-semibold">
-            {alternatives.length} of 3 selected
-          </p>
-          <button
-            type="button"
-            className="btn btn-primary mt-4 min-h-14 w-full text-[1.25rem]"
-            disabled={alternatives.length === 0 || sending}
-            onClick={sendDecision}
-          >
-            {sending ? "Sending…" : "Text alternatives to customer"}
-          </button>
-        </section>
+        <AlternativePicker
+          days={offerDays}
+          selectedDate={offerDate}
+          alternatives={alternatives}
+          sending={sending}
+          onSelectDate={setOfferDate}
+          onToggleTime={chooseAlternative}
+          onSend={sendDecision}
+          onBack={() => setMode(null)}
+        />
       ) : null}
 
       {error ? (
@@ -248,6 +200,120 @@ export function KimDecision({
         </p>
       ) : null}
     </div>
+  );
+}
+
+function AlternativePicker({
+  days,
+  selectedDate,
+  alternatives,
+  sending,
+  onSelectDate,
+  onToggleTime,
+  onSend,
+  onBack,
+}: {
+  days: KimOfferDay[];
+  selectedDate: string;
+  alternatives: AlternativeWindow[];
+  sending: boolean;
+  onSelectDate: (date: string) => void;
+  onToggleTime: (option: AlternativeWindow) => void;
+  onSend: () => void;
+  onBack: () => void;
+}) {
+  const day = days.find((candidate) => candidate.date === selectedDate) ?? days[0];
+
+  return (
+    <section className="kim-card">
+      <button type="button" className="kim-back" onClick={onBack}>
+        ← Back
+      </button>
+      <h2 className="mt-3">Offer up to 3 times</h2>
+      <p className="mt-1 text-ink/75">
+        Pick a day, then the exact time. For example, tomorrow at 2:00 PM.
+      </p>
+
+      {alternatives.length > 0 ? (
+        <ul className="mt-4 space-y-2">
+          {alternatives.map((option) => {
+            const offerDay = days.find((candidate) => candidate.date === option.date);
+            const time = offerDay?.times.find((slot) => slot.start === option.start);
+            return (
+              <li key={`${option.date}:${option.start}`}>
+                <button
+                  type="button"
+                  className="kim-choice kim-choice-selected w-full text-left"
+                  onClick={() => onToggleTime(option)}
+                >
+                  {offerDay?.heading ?? option.date} at {time?.label ?? "this time"}
+                  <span className="mt-1 block text-small font-normal">
+                    Tap to remove
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {day ? (
+        <>
+          <h3 className="mt-5 text-[1.25rem]">Which day?</h3>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {days.map((candidate) => (
+              <button
+                key={candidate.date}
+                type="button"
+                className={`kim-choice ${
+                  candidate.date === day.date ? "kim-choice-selected" : ""
+                }`}
+                onClick={() => onSelectDate(candidate.date)}
+              >
+                {candidate.heading}
+              </button>
+            ))}
+          </div>
+
+          <h3 className="mt-5 text-[1.25rem]">What time on {day.heading}?</h3>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {day.times.map((time) => {
+              const selected = alternatives.some(
+                (option) =>
+                  option.date === day.date && option.start === time.start,
+              );
+              return (
+                <button
+                  key={time.start}
+                  type="button"
+                  className={`kim-choice ${selected ? "kim-choice-selected" : ""}`}
+                  disabled={!selected && alternatives.length >= 3}
+                  onClick={() =>
+                    onToggleTime({ date: day.date, start: time.start })
+                  }
+                >
+                  {time.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <p className="mt-4">No open days left to offer.</p>
+      )}
+
+      <p aria-live="polite" className="mt-5 font-semibold">
+        {alternatives.length} of 3 selected
+      </p>
+      <button
+        type="button"
+        className="btn btn-primary mt-4 min-h-14 w-full text-[1.25rem]"
+        disabled={alternatives.length === 0 || sending}
+        onClick={onSend}
+      >
+        {sending ? "Sending…" : "Text these times"}
+      </button>
+    </section>
   );
 }
 

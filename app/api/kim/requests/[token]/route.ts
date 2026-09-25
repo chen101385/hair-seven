@@ -9,7 +9,7 @@ import {
 import {
   formatTime12,
   generateAvailabilityWindows,
-  getAvailableDays,
+  getKimOfferDays,
   weekdayIndex,
 } from "@/lib/hours";
 import { deliverCustomerSms } from "@/lib/notify";
@@ -118,13 +118,14 @@ function normalizeAlternatives(value: unknown): AlternativeWindow[] {
 }
 
 function alternativesAreOffered(options: AlternativeWindow[]): boolean {
-  const offered = new Set(
-    getAvailableDays().flatMap((day) =>
-      day.slots.map((slot) => `${day.date}:${slot.start}`),
-    ),
+  const offered = new Map(
+    getKimOfferDays().map((day) => [
+      day.date,
+      new Set(day.times.map((time) => time.start)),
+    ]),
   );
   return options.every((option) =>
-    offered.has(`${option.date}:${option.start}`),
+    offered.get(option.date)?.has(option.start),
   );
 }
 

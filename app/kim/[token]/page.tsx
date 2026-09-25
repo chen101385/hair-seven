@@ -4,7 +4,7 @@ import {
   formatFullDateLabel,
   formatTime12,
   generateAvailabilityWindows,
-  getAvailableDays,
+  getKimOfferDays,
   weekdayIndex,
 } from "@/lib/hours";
 import { getBookingRequest } from "@/lib/booking-requests";
@@ -61,7 +61,7 @@ export default async function KimBookingPage({
           notes: payload.notes,
         }}
         exactTimes={exactTimes}
-        availableDays={getAvailableDays().slice(0, 10)}
+        offerDays={getKimOfferDays()}
       />
     </KimPageShell>
   );

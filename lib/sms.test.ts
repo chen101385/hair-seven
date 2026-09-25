@@ -25,7 +25,51 @@ const payload = (over: Partial<ContactPayload> = {}): ContactPayload => ({
   ...over,
 });
 
+/** Production links look like this: 27-character prefix plus a 16-character token. */
+const manageUrl = "https://hair7salon.com/kim/K8CGUlERUe3vXff0";
+
 describe("buildSms", () => {
+  it("spells out a typical booking in plain words on one text", () => {
+    const sms = buildSms(
+      payload({
+        name: "Christopher Chen",
+        services: ["Haircut", "Hair coloring"],
+        primary: { date: "2026-09-30", slots: [720, 900] },
+      }),
+      { manageUrl },
+    );
+
+    expect(sms.body).toBe(
+      [
+        "Hair 7",
+        "Christopher Chen",
+        "(650) 555-0147",
+        "Wed Sep 30",
+        "12pm-3pm, 3pm-6pm",
+        "Haircut, Coloring",
+        `Review ${manageUrl}`,
+      ].join("\n"),
+    );
+    expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+    expect(sms.to).toBe("+16509490796");
+    expect(sms.body).toBe(toGsm7(sms.body));
+  });
+
+  it("abbreviates services, then times, before touching the name", () => {
+    const full = payload({
+      name: "Christopher Chen",
+      services: ["Haircut", "Hair styling", "Hair coloring", "Waxing"],
+      primary: { date: "2026-09-03", slots: [600, 720, 900] },
+    });
+    const sms = buildSms(full, { manageUrl });
+
+    expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+    expect(sms.body).toContain("\nChristopher Chen\n");
+    expect(sms.body).toContain("Cut, Style, Color, Wax");
+    expect(sms.body).toContain("10am-12pm, 12pm-3pm, 3pm-6pm");
+    expect(sms.body).toContain(`Review ${manageUrl}`);
+  });
+
   it("keeps a complete booking on one GSM-7 text when there are no notes", () => {
     const sms = buildSms(
       payload({
@@ -36,13 +80,13 @@ describe("buildSms", () => {
     );
 
     expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
-    expect(sms.body).toContain("Hair7 BOOK");
-    expect(sms.body).toContain("T (650) 555-0147");
+    expect(sms.body).toContain("Hair 7");
+    expect(sms.body).toContain("(650) 555-0147");
+    expect(sms.body).not.toMatch(/\bText\b|\bCall\b/);
     expect(sms.body).toContain("Thu Sep 3");
     expect(sms.body).toContain("10a-12p");
     expect(sms.body).toContain("12p-3p");
     expect(sms.body).toContain("3p-6p");
-    expect(sms.to).toBe("+16509490796");
     expect(sms.body).toBe(toGsm7(sms.body));
   });
 
@@ -55,9 +99,15 @@ describe("buildSms", () => {
     expect(withNotes.startsWith(withoutNotes)).toBe(true);
   });
 
-  it("labels a phone callback with C", () => {
-    expect(buildSms(payload({ replyChannel: "call" })).body).toContain(
-      "C (650) 555-0147",
+  it("shows the phone number without saying text or call", () => {
+    const body = buildSms(payload({ replyChannel: "call" })).body;
+    expect(body).toContain("(650) 555-0147");
+    expect(body).not.toMatch(/\bText\b|\bCall\b/);
+  });
+
+  it("says so when no service was picked", () => {
+    expect(buildSms(payload({ services: [] })).body).toContain(
+      "Service not chosen",
     );
   });
 
@@ -72,7 +122,7 @@ describe("buildSms", () => {
     );
 
     expect(sms.body).toHaveLength(SMS_MAX_LENGTH);
-    expect(sms.body).toContain("Svc Cut/Style/Color/Wax");
+    expect(sms.body).toContain("Cut, Style, Color, Wax");
     expect(sms.body.endsWith("x".repeat(MAX_NOTES_LENGTH))).toBe(true);
   });
 
@@ -89,22 +139,37 @@ describe("buildSms", () => {
     );
     const nameLine = sms.body.split("\n")[1];
 
-    expect(sms.body.startsWith("Hair7 BOOK\n")).toBe(true);
+    expect(sms.body.startsWith("Hair 7\n")).toBe(true);
     expect(sms.body).toHaveLength(SMS_MAX_LENGTH);
-    expect(nameLine).toBe("Christopher Chen with the long...");
+    expect(nameLine).toBe("Christopher Chen with the longest pos...");
     expect(sms.body.endsWith("x".repeat(187))).toBe(true);
   });
 
   it("puts the secure Kim link in the booking text and leaves notes on the page", () => {
-    const manageUrl = "https://hair7.example/kim/abcdefghijklmnopqrstuvwx";
     const sms = buildSms(payload({ notes: "Private timing note" }), {
       manageUrl,
     });
 
-    expect(sms.body).toContain("Hair7 BOOK");
+    expect(sms.body.startsWith("Hair 7\n"));
     expect(sms.body).toContain(`Review ${manageUrl}`);
     expect(sms.body).not.toContain("Private timing note");
     expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+  });
+
+  it("writes the question text in the same plain style", () => {
+    const sms = buildSms(
+      payload({
+        formType: "question",
+        replyChannel: "call",
+        primary: { ...emptyPicker },
+        question: "Do you do perms?",
+      }),
+    );
+
+    expect(sms.body.startsWith("Hair 7 question\nRuth Alvarez\nCall (650) 555-0147\n")).toBe(
+      true,
+    );
+    expect(sms.body).toContain("Do you do perms?");
   });
 
   it("builds fixed customer confirmation and alternative templates", () => {
@@ -119,8 +184,8 @@ describe("buildSms", () => {
     expect(confirmed.body).toContain("Reply STOP to opt out, HELP for help");
     expect(confirmed.body).not.toMatch(/data rates/i);
     expect(alternatives.body).toContain("Kim can offer");
-    expect(alternatives.body).toContain("Tue Sep 8 2p-6p");
-    expect(alternatives.body).toContain("Wed Sep 9 10a-12p");
+    expect(alternatives.body).toContain("Tue Sep 8 at 2 PM");
+    expect(alternatives.body).toContain("Wed Sep 9 at 10 AM");
     expect(alternatives.body).toContain("Reply STOP to opt out");
     expect(confirmed.body).toBe(toGsm7(confirmed.body));
     expect(alternatives.body).toBe(toGsm7(alternatives.body));

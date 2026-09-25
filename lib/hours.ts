@@ -240,6 +240,57 @@ export function getAvailableDays(now: Date = new Date()): AvailableDay[] {
   return days;
 }
 
+export type KimOfferDay = {
+  date: string;
+  /** "Tomorrow, Sep 26" or "Sunday, Sep 28". */
+  heading: string;
+  times: { start: number; label: string }[];
+};
+
+/**
+ * Days and clock times Kim can offer when the requested window is taken.
+ * Unlike the public picker, this ignores lead time: she may offer later today.
+ * Times are every half hour from open until close, and today's past times are
+ * left out.
+ */
+export function getKimOfferDays(now: Date = new Date()): KimOfferDay[] {
+  const { date: today, minutes: nowMinutes } = salonNow(now);
+  const tomorrow = addDays(today, 1);
+  const { daysAhead, blackoutDates } = site.booking;
+  const days: KimOfferDay[] = [];
+
+  for (let offset = 0; offset < daysAhead; offset++) {
+    const date = addDays(today, offset);
+    if (blackoutDates.includes(date)) continue;
+    const dayHours = site.hours[weekdayIndex(date)];
+    if (!dayHours?.open || !dayHours.close) continue;
+
+    const open = parseHHMM(dayHours.open);
+    const close = parseHHMM(dayHours.close);
+    const earliest = date === today ? nowMinutes : 0;
+    const times: KimOfferDay["times"] = [];
+    for (let start = open; start < close; start += 30) {
+      if (start < earliest) continue;
+      times.push({ start, label: formatTime12(start) });
+    }
+    if (times.length === 0) continue;
+
+    const when =
+      date === today
+        ? "Today"
+        : date === tomorrow
+          ? "Tomorrow"
+          : WEEKDAYS_LONG[weekdayIndex(date)];
+    days.push({
+      date,
+      heading: `${when}, ${formatDateLabel(date)}`,
+      times,
+    });
+  }
+
+  return days;
+}
+
 /** "Thursday, Sep 18". */
 export function describeDay(picker: PickerValue): string {
   return picker.date ? formatFullDateLabel(picker.date) : "—";

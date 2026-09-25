@@ -58,7 +58,10 @@ export function hasDurableBookingStorage(): boolean {
 export async function createBookingRequest(
   payload: ContactPayload,
 ): Promise<StoredBookingRequest> {
-  const token = randomBytes(18).toString("base64url");
+  // 96 random bits. Shorter than the original 24 characters so Kim's booking
+  // text has room for plain words; still far beyond guessable for a link
+  // that expires in seven days and completes once.
+  const token = randomBytes(12).toString("base64url");
   const now = Date.now();
   const record: StoredBookingRequest = {
     token,
@@ -149,8 +152,9 @@ export function bookingResponseUrl(request: Request, token: string): string {
   return `${origin}/kim/${token}`;
 }
 
+/** 16 characters today; 24 for links texted before the token was shortened. */
 function isToken(value: string): boolean {
-  return /^[A-Za-z0-9_-]{24}$/.test(value);
+  return /^[A-Za-z0-9_-]{16}$|^[A-Za-z0-9_-]{24}$/.test(value);
 }
 
 function pruneLocal(now: number) {
