@@ -135,15 +135,12 @@ function packAppointment(
   payload: ContactPayload,
   density: Density,
 ): string {
-  const reply = `${payload.replyChannel === "call" ? "Call" : "Text"} ${toGsm7(
-    formatPhone(payload.phone),
-  )}`;
   const day = payload.primary.date ? formatSmsDate(payload.primary.date) : "-";
 
   return [
-    "Hair 7 booking",
+    "Hair 7",
     name,
-    reply,
+    toGsm7(formatPhone(payload.phone)),
     day,
     describeWindowsSms(payload.primary, density >= 2),
     describeServicesSms(payload.services, density >= 1),
@@ -253,7 +250,7 @@ export function buildCustomerAlternativesSms(
   const choices = options
     .map(
       (option) =>
-        `${formatSmsDate(option.date)} ${describeAlternativeWindow(option)}`,
+        `${formatSmsDate(option.date)} at ${formatClockForSms(option.start)}`,
     )
     .join("; ");
   return customerSms(
@@ -264,18 +261,10 @@ export function buildCustomerAlternativesSms(
 
 function formatExactTime(value: string): string {
   const [hours, minutes] = value.split(":").map(Number);
-  return formatSmsTime(hours * 60 + minutes)
-    .replace("a", " AM")
-    .replace("p", " PM");
+  return formatClockForSms(hours * 60 + minutes);
 }
 
-function describeAlternativeWindow(option: AlternativeWindow): string {
-  const dayHours = site.hours[weekdayIndex(option.date)];
-  if (!dayHours?.open || !dayHours.close) return formatSmsTime(option.start);
-  const window = generateAvailabilityWindows(dayHours.open, dayHours.close).find(
-    (candidate) => candidate.start === option.start,
-  );
-  return window
-    ? `${formatSmsTime(window.start)}-${formatSmsTime(window.end)}`
-    : formatSmsTime(option.start);
+/** "2p" -> "2 PM", "2:30p" -> "2:30 PM". */
+function formatClockForSms(minutes: number): string {
+  return formatSmsTime(minutes).replace("a", " AM").replace("p", " PM");
 }

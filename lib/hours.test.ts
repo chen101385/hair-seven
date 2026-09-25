@@ -14,6 +14,7 @@ import {
   formatTimeCompact,
   generateAvailabilityWindows,
   getAvailableDays,
+  getKimOfferDays,
   openingHoursSpecification,
   parseHHMM,
   salonNow,
@@ -252,6 +253,28 @@ describe("describing what was requested", () => {
       "Morning (10:00 AM–12:00 PM), Early afternoon (12:00 PM–3:00 PM), Early evening (3:00 PM–6:00 PM)",
     );
     expect(describeSlotShort(value)).toBe("Thursday, Sep 3 (3 windows)");
+  });
+});
+
+describe("getKimOfferDays", () => {
+  it("offers exact half hours, including later today, and skips closed days", () => {
+    const wednesdayAtTen = new Date("2026-09-02T17:00:00Z");
+    const days = getKimOfferDays(wednesdayAtTen);
+    const today = days[0];
+    const tomorrow = days[1];
+
+    expect(today?.heading).toBe("Today, Sep 2");
+    expect(today?.times[0]).toEqual({ start: 600, label: "10:00 AM" });
+    expect(today?.times.at(-1)?.label).toBe("5:30 PM");
+    expect(tomorrow?.heading).toBe("Tomorrow, Sep 3");
+    expect(days.map((day) => day.heading).join(" ")).not.toMatch(/Monday/);
+  });
+
+  it("drops times that have already passed today", () => {
+    const wednesdayAfternoon = new Date("2026-09-02T22:00:00Z");
+    const today = getKimOfferDays(wednesdayAfternoon)[0];
+    expect(today?.heading).toBe("Today, Sep 2");
+    expect(today?.times[0]?.label).toBe("3:00 PM");
   });
 });
 

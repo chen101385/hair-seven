@@ -193,10 +193,15 @@ automatically. **Those environments must keep that store connected**; serverless
 memory does not persist reliably between the booking submission and Kim opening
 her link.
 
-An appointment SMS starts with `Hair 7 booking` and includes a private, random
-link. It is written in plain words (`Text (650) 555-0147`, `12pm-3pm`,
-`Haircut, Coloring`) and only falls back to abbreviations when three windows
-and several services would push it past one 160-character text.
+An appointment SMS starts with `Hair 7` and includes the phone number, the
+requested windows, and a private, random link. It does not say whether the
+customer prefers a text or a call. Service names shorten first, then the time
+windows, and the name is shortened last, so a normal booking stays one
+160-character text.
+
+When the requested window is taken, Kim picks up to three exact clock times
+(every half hour she is open). The customer is texted those times, such as
+Tue Sep 8 at 2 PM, and calls the salon to choose.
 Kim opens it on her phone or tablet, taps Yes and an exact time, or taps No and
 up to three alternative windows. The app sends the customer a fixed English
 message. Links expire after seven days and can only be completed once.
