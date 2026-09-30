@@ -200,14 +200,16 @@ shorten first, then the time windows, and the name is shortened last, so a
 normal booking stays one 160-character text.
 
 When the requested window is taken, Kim picks up to three exact clock times.
-The customer is texted those times and calls the salon to choose.
+The customer is texted those times and calls the salon to choose. If they are
+on the same day, the text names that day once, then the times: "Sat, Oct 3rd
+at 10 AM, 1 PM, and 3 PM." The whole text stays one segment.
 
 A callback request does not ask Kim to pick a time on this page. The page says
 CALLBACK, shows the customer phone, and gives her a button to call.
 
 Kim opens a text request on her phone or tablet, taps Yes and an exact time,
-or taps No and up to three alternative windows. Links expire after seven days
-and can only be completed once.
+or taps No and up to three times. Links expire after seven days and can only
+be completed once.
 
 ---
 

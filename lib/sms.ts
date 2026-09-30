@@ -250,17 +250,104 @@ export function buildCustomerAlternativesSms(
   payload: ContactPayload,
   options: AlternativeWindow[],
 ): Sms {
-  const firstName = fit(payload.name.trim().split(/\s+/)[0] || "there", 30);
-  const choices = options
-    .map(
-      (option) =>
-        `${formatSmsDate(option.date)} at ${formatClockForSms(option.start)}`,
-    )
+  const rawName = payload.name.trim().split(/\s+/)[0] || "there";
+  const tail = `. Call ${site.phone} with your choice. ${CUSTOMER_SMS_OPT_OUT}`;
+  const lead = "Hair 7: Hi ";
+  const bridge = ", Kim can offer ";
+  const prose = assembleAlternatives(rawName, describeOffers(options), lead, bridge, tail);
+  const body =
+    prose.length <= SMS_SEGMENT_LENGTH
+      ? prose
+      : assembleAlternatives(rawName, describeOffersCompact(options), lead, bridge, tail);
+  return { to: phoneToE164(payload.phone), body };
+}
+
+function assembleAlternatives(
+  rawName: string,
+  offers: string,
+  lead: string,
+  bridge: string,
+  tail: string,
+): string {
+  const nameBudget =
+    SMS_SEGMENT_LENGTH - lead.length - bridge.length - offers.length - tail.length;
+  const firstName = fit(rawName, Math.max(1, nameBudget));
+  return toGsm7(`${lead}${firstName}${bridge}${offers}${tail}`);
+}
+
+/** Sept stays four letters; June and July stay whole. Everything else is three. */
+const MONTHS_OFFER = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "June",
+  "July",
+  "Aug",
+  "Sept",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/** "2026-10-03" -> "Sat, Oct 3rd". */
+function formatOfferDay(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+    weekdayIndex(date)
+  ];
+  return `${weekday}, ${MONTHS_OFFER[month - 1]} ${ordinal(day)}`;
+}
+
+function ordinal(day: number): string {
+  const teen = day % 100;
+  if (teen >= 11 && teen <= 13) return `${day}th`;
+  const suffix = ["th", "st", "nd", "rd"][day % 10] ?? "th";
+  return `${day}${suffix}`;
+}
+
+/** "10 AM, 1 PM, and 3 PM". */
+function englishList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+/**
+ * Times on one day share that day: "Sat, Oct 3rd at 10 AM, 1 PM, and 3 PM".
+ * A mix of days names each day once.
+ */
+function offerGroups(options: AlternativeWindow[]) {
+  const groups: { date: string; starts: number[] }[] = [];
+  for (const option of options) {
+    const group = groups.find((candidate) => candidate.date === option.date);
+    if (group) group.starts.push(option.start);
+    else groups.push({ date: option.date, starts: [option.start] });
+  }
+  return groups;
+}
+
+function describeOffers(options: AlternativeWindow[]): string {
+  const phrases = offerGroups(options).map(({ date, starts }) => {
+    const times = [...starts].sort((a, b) => a - b).map(formatClockForSms);
+    return `${formatOfferDay(date)} at ${englishList(times)}`;
+  });
+  return englishList(phrases);
+}
+
+/** Used only when three different days will not fit in one segment. */
+function describeOffersCompact(options: AlternativeWindow[]): string {
+  return offerGroups(options)
+    .map(({ date, starts }) => {
+      const [, month, day] = date.split("-").map(Number);
+      const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+        weekdayIndex(date)
+      ];
+      const times = [...starts].sort((a, b) => a - b).map(formatClockForSms);
+      return `${weekday} ${month}/${day} ${times.join(", ")}`;
+    })
     .join("; ");
-  return customerSms(
-    phoneToE164(payload.phone),
-    `Hair 7: Hi ${firstName}, Kim can offer ${choices}. Call ${site.phone} with your choice.`,
-  );
 }
 
 function formatExactTime(value: string): string {
