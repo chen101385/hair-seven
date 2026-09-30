@@ -48,8 +48,7 @@ export default async function KimBookingPage({
         request={{
           name: payload.name,
           phone: payload.phone,
-          replyPreference:
-            payload.replyChannel === "call" ? "Call" : "Text",
+          wantsCallback: payload.replyChannel === "call",
           services: payload.services,
           day: payload.primary.date
             ? formatFullDateLabel(payload.primary.date)

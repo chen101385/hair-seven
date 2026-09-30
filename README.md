@@ -194,17 +194,20 @@ memory does not persist reliably between the booking submission and Kim opening
 her link.
 
 An appointment SMS starts with `Hair 7` and includes the phone number, the
-requested windows, and a private, random link. It does not say whether the
-customer prefers a text or a call. Service names shorten first, then the time
-windows, and the name is shortened last, so a normal booking stays one
-160-character text.
+requested windows, and a private, random link. A callback request puts `Call`
+in front of the number. A text request puts `T` in front of it. Service names
+shorten first, then the time windows, and the name is shortened last, so a
+normal booking stays one 160-character text.
 
-When the requested window is taken, Kim picks up to three exact clock times
-(every half hour she is open). The customer is texted those times, such as
-Tue Sep 8 at 2 PM, and calls the salon to choose.
-Kim opens it on her phone or tablet, taps Yes and an exact time, or taps No and
-up to three alternative windows. The app sends the customer a fixed English
-message. Links expire after seven days and can only be completed once.
+When the requested window is taken, Kim picks up to three exact clock times.
+The customer is texted those times and calls the salon to choose.
+
+A callback request does not ask Kim to pick a time on this page. The page says
+CALLBACK, shows the customer phone, and gives her a button to call.
+
+Kim opens a text request on her phone or tablet, taps Yes and an exact time,
+or taps No and up to three alternative windows. Links expire after seven days
+and can only be completed once.
 
 ---
 
