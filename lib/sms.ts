@@ -137,10 +137,13 @@ function packAppointment(
 ): string {
   const day = payload.primary.date ? formatSmsDate(payload.primary.date) : "-";
 
+  const phone = toGsm7(formatPhone(payload.phone));
+  const phoneLine = payload.replyChannel === "call" ? `Call ${phone}` : phone;
+
   return [
     "Hair 7",
     name,
-    toGsm7(formatPhone(payload.phone)),
+    phoneLine,
     day,
     describeWindowsSms(payload.primary, density >= 2),
     describeServicesSms(payload.services, density >= 1),

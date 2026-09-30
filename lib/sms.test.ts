@@ -99,8 +99,34 @@ describe("buildSms", () => {
     expect(withNotes.startsWith(withoutNotes)).toBe(true);
   });
 
-  it("shows the phone number without saying text or call", () => {
-    const body = buildSms(payload({ replyChannel: "call" })).body;
+  it("puts Call in front of the number when they want a callback", () => {
+    const sms = buildSms(
+      payload({
+        name: "Christopher Chen",
+        replyChannel: "call",
+        services: ["Haircut", "Hair coloring"],
+        primary: { date: "2026-09-30", slots: [720, 900] },
+      }),
+      { manageUrl },
+    );
+
+    expect(sms.body).toBe(
+      [
+        "Hair 7",
+        "Christopher Chen",
+        "Call (650) 555-0147",
+        "Wed Sep 30",
+        "12pm-3pm, 3pm-6pm",
+        "Haircut, Coloring",
+        `Review ${manageUrl}`,
+      ].join("\n"),
+    );
+    expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+    expect(sms.body).not.toMatch(/\bText\b/);
+  });
+
+  it("shows a text booking number without saying text or call", () => {
+    const body = buildSms(payload({ replyChannel: "text" })).body;
     expect(body).toContain("(650) 555-0147");
     expect(body).not.toMatch(/\bText\b|\bCall\b/);
   });

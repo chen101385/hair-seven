@@ -11,7 +11,7 @@ import { CheckIcon } from "@/components/icons";
 type RequestSummary = {
   name: string;
   phone: string;
-  replyPreference: string;
+  wantsCallback: boolean;
   services: string[];
   day: string;
   windows: string[];
@@ -110,23 +110,47 @@ export function KimDecision({
   return (
     <div className="space-y-5">
       <section className="kim-card">
+        {request.wantsCallback ? <CallbackBanner phone={request.phone} /> : null}
         <p className="text-small font-semibold uppercase tracking-wide text-awning">
           Appointment request
         </p>
         <h1 className="mt-1 text-[2rem]">{request.name}</h1>
         <dl className="mt-5 space-y-3 text-[1.125rem]">
+          {request.wantsCallback ? (
+            <>
+              <Summary label="Customer phone" values={[request.phone]} />
+              <div>
+                <dt className="font-semibold">Customer request</dt>
+                <dd className="text-[1.75rem] font-semibold leading-tight text-awning">
+                  Callback
+                </dd>
+              </div>
+            </>
+          ) : null}
           <Summary label="Services" values={request.services} fallback="Not sure" />
           <Summary label="Requested day" values={[request.day]} />
           <Summary label="Times" values={request.windows} />
           {request.notes ? (
             <Summary label="Notes" values={[request.notes]} />
           ) : null}
-          <Summary label="Customer phone" values={[request.phone]} />
-          <Summary label="Prefers" values={[request.replyPreference]} />
+          {request.wantsCallback ? null : (
+            <>
+              <Summary label="Customer phone" values={[request.phone]} />
+              <Summary label="Prefers" values={["Text"]} />
+            </>
+          )}
         </dl>
+        {request.wantsCallback ? (
+          <a
+            href={`tel:${request.phone.replace(/\D/g, "")}`}
+            className="btn btn-primary mt-6 min-h-16 w-full text-[1.5rem]"
+          >
+            Call {request.phone}
+          </a>
+        ) : null}
       </section>
 
-      {!mode ? (
+      {!request.wantsCallback && !mode ? (
         <section className="kim-card">
           <h2 className="text-center">Can you take this appointment?</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -314,6 +338,20 @@ function AlternativePicker({
         {sending ? "Sending…" : "Text these times"}
       </button>
     </section>
+  );
+}
+
+function CallbackBanner({ phone }: { phone: string }) {
+  return (
+    <div className="mb-5 rounded-md border-4 border-awning bg-tint px-4 py-5 text-center">
+      <p className="font-display text-[2.75rem] font-semibold leading-none tracking-wide text-awning">
+        CALLBACK
+      </p>
+      <p className="mt-3 text-[1.35rem] font-semibold">
+        Call this customer. Do not text.
+      </p>
+      <p className="mt-2 text-[1.75rem] font-semibold">{phone}</p>
+    </div>
   );
 }
 
