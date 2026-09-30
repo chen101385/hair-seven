@@ -184,8 +184,9 @@ describe("buildSms", () => {
     expect(confirmed.body).toContain("Reply STOP to opt out, HELP for help");
     expect(confirmed.body).not.toMatch(/data rates/i);
     expect(alternatives.body).toContain(
-      "Kim can offer Tuesday, September 8th at 2 PM and Wednesday, September 9th at 10 AM",
+      "Kim can offer Tue, Sept 8th at 2 PM and Wed, Sept 9th at 10 AM",
     );
+    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
     expect(alternatives.body).toContain("Reply STOP to opt out");
     expect(confirmed.body).toBe(toGsm7(confirmed.body));
     expect(alternatives.body).toBe(toGsm7(alternatives.body));
@@ -200,9 +201,45 @@ describe("buildSms", () => {
     ]);
 
     expect(alternatives.body).toContain(
-      "Hi Ruth, Kim can offer Saturday, October 3rd at the following times: 10 AM, 1 PM, and 3 PM.",
+      "Hi Ruth, Kim can offer Sat, Oct 3rd at 10 AM, 1 PM, and 3 PM.",
     );
-    expect(alternatives.body.match(/October 3rd/g)).toHaveLength(1);
-    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_MAX_LENGTH);
+    expect(alternatives.body.match(/Oct 3rd/g)).toHaveLength(1);
+    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+  });
+
+  it("keeps the longest same-day offer inside one segment", () => {
+    const alternatives = buildCustomerAlternativesSms(
+      payload({
+        name: "Christopherwithaverylonggivenname Alvarez",
+      }),
+      [
+        { date: "2026-09-23", start: 10 * 60 + 30 },
+        { date: "2026-09-23", start: 11 * 60 + 30 },
+        { date: "2026-09-23", start: 12 * 60 + 30 },
+      ],
+    );
+
+    expect(alternatives.body).toContain(
+      "Wed, Sept 23rd at 10:30 AM, 11:30 AM, and 12:30 PM",
+    );
+    expect(alternatives.body).toContain("Reply STOP to opt out, HELP for help.");
+    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
+  });
+
+  it("keeps three different days inside one segment", () => {
+    const alternatives = buildCustomerAlternativesSms(
+      payload({ name: "Christopherwithaverylonggivenname Alvarez" }),
+      [
+        { date: "2026-09-23", start: 10 * 60 + 30 },
+        { date: "2026-09-24", start: 11 * 60 + 30 },
+        { date: "2026-09-25", start: 12 * 60 + 30 },
+      ],
+    );
+
+    expect(alternatives.body).toContain(
+      "Wed 9/23 10:30 AM; Thu 9/24 11:30 AM; Fri 9/25 12:30 PM",
+    );
+    expect(alternatives.body).toContain("Reply STOP to opt out, HELP for help.");
+    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
   });
 });
