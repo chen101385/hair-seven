@@ -199,12 +199,12 @@ customer prefers a text or a call. Service names shorten first, then the time
 windows, and the name is shortened last, so a normal booking stays one
 160-character text.
 
-When the requested window is taken, Kim picks up to three exact clock times
-(every half hour she is open). The customer is texted those times, such as
-Tue Sep 8 at 2 PM, and calls the salon to choose.
+When the requested window is taken, Kim picks up to three exact clock times.
+If they are on the same day, the customer text names that day once, then the
+times: "Saturday, October 3rd at the following times: 10 AM, 1 PM, and 3 PM."
 Kim opens it on her phone or tablet, taps Yes and an exact time, or taps No and
-up to three alternative windows. The app sends the customer a fixed English
-message. Links expire after seven days and can only be completed once.
+up to three times. The app sends the customer a fixed English message. Links
+expire after seven days and can only be completed once.
 
 ---
 

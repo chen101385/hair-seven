@@ -36,8 +36,9 @@ export const campaign = {
     {
       label: "Sample 2 - alternative times",
       body: buildCustomerAlternativesSms(sampleCustomer, [
-        { date: "2026-09-08", start: 840 },
-        { date: "2026-09-09", start: 600 },
+        { date: "2026-10-03", start: 600 },
+        { date: "2026-10-03", start: 780 },
+        { date: "2026-10-03", start: 900 },
       ]).body,
     },
     {

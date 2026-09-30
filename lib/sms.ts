@@ -247,16 +247,76 @@ export function buildCustomerAlternativesSms(
   options: AlternativeWindow[],
 ): Sms {
   const firstName = fit(payload.name.trim().split(/\s+/)[0] || "there", 30);
-  const choices = options
-    .map(
-      (option) =>
-        `${formatSmsDate(option.date)} at ${formatClockForSms(option.start)}`,
-    )
-    .join("; ");
   return customerSms(
     phoneToE164(payload.phone),
-    `Hair 7: Hi ${firstName}, Kim can offer ${choices}. Call ${site.phone} with your choice.`,
+    `Hair 7: Hi ${firstName}, Kim can offer ${describeOffers(options)}. Call ${site.phone} with your choice.`,
   );
+}
+
+const MONTHS_LONG = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const WEEKDAYS_LONG = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+/** "2026-10-03" -> "Saturday, October 3rd". */
+function formatOfferDay(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  return `${WEEKDAYS_LONG[weekdayIndex(date)]}, ${MONTHS_LONG[month - 1]} ${ordinal(day)}`;
+}
+
+function ordinal(day: number): string {
+  const teen = day % 100;
+  if (teen >= 11 && teen <= 13) return `${day}th`;
+  const suffix = ["th", "st", "nd", "rd"][day % 10] ?? "th";
+  return `${day}${suffix}`;
+}
+
+/** "10 AM, 1 PM, and 3 PM". */
+function englishList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+/**
+ * Times Kim picked on one day are listed once: "Saturday, October 3rd at the
+ * following times: 10 AM, 1 PM, and 3 PM". A mix of days keeps each day.
+ */
+function describeOffers(options: AlternativeWindow[]): string {
+  const groups: { date: string; starts: number[] }[] = [];
+  for (const option of options) {
+    const group = groups.find((candidate) => candidate.date === option.date);
+    if (group) group.starts.push(option.start);
+    else groups.push({ date: option.date, starts: [option.start] });
+  }
+
+  const phrases = groups.map(({ date, starts }) => {
+    const times = [...starts].sort((a, b) => a - b).map(formatClockForSms);
+    const day = formatOfferDay(date);
+    if (times.length === 1) return `${day} at ${times[0]}`;
+    return `${day} at the following times: ${englishList(times)}`;
+  });
+  return englishList(phrases);
 }
 
 function formatExactTime(value: string): string {

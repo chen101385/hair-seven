@@ -183,12 +183,26 @@ describe("buildSms", () => {
     expect(confirmed.body).toContain("confirmed Thursday, Sep 3 at 3:30 PM");
     expect(confirmed.body).toContain("Reply STOP to opt out, HELP for help");
     expect(confirmed.body).not.toMatch(/data rates/i);
-    expect(alternatives.body).toContain("Kim can offer");
-    expect(alternatives.body).toContain("Tue Sep 8 at 2 PM");
-    expect(alternatives.body).toContain("Wed Sep 9 at 10 AM");
+    expect(alternatives.body).toContain(
+      "Kim can offer Tuesday, September 8th at 2 PM and Wednesday, September 9th at 10 AM",
+    );
     expect(alternatives.body).toContain("Reply STOP to opt out");
     expect(confirmed.body).toBe(toGsm7(confirmed.body));
     expect(alternatives.body).toBe(toGsm7(alternatives.body));
+    expect(alternatives.body.length).toBeLessThanOrEqual(SMS_MAX_LENGTH);
+  });
+
+  it("lists same-day offers once, then the clock times", () => {
+    const alternatives = buildCustomerAlternativesSms(payload(), [
+      { date: "2026-10-03", start: 900 },
+      { date: "2026-10-03", start: 600 },
+      { date: "2026-10-03", start: 780 },
+    ]);
+
+    expect(alternatives.body).toContain(
+      "Hi Ruth, Kim can offer Saturday, October 3rd at the following times: 10 AM, 1 PM, and 3 PM.",
+    );
+    expect(alternatives.body.match(/October 3rd/g)).toHaveLength(1);
     expect(alternatives.body.length).toBeLessThanOrEqual(SMS_MAX_LENGTH);
   });
 });
