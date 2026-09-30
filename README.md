@@ -195,7 +195,7 @@ her link.
 
 An appointment SMS starts with `Hair 7` and includes the phone number, the
 requested windows, and a private, random link. A callback request puts `Call`
-in front of the number. A text request shows the number alone. Service names
+in front of the number. A text request puts `T` in front of it. Service names
 shorten first, then the time windows, and the name is shortened last, so a
 normal booking stays one 160-character text.
 

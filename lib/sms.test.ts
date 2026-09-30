@@ -43,7 +43,7 @@ describe("buildSms", () => {
       [
         "Hair 7",
         "Christopher Chen",
-        "(650) 555-0147",
+        "T (650) 555-0147",
         "Wed Sep 30",
         "12pm-3pm, 3pm-6pm",
         "Haircut, Coloring",
@@ -81,7 +81,7 @@ describe("buildSms", () => {
 
     expect(sms.body.length).toBeLessThanOrEqual(SMS_SEGMENT_LENGTH);
     expect(sms.body).toContain("Hair 7");
-    expect(sms.body).toContain("(650) 555-0147");
+    expect(sms.body).toContain("\nT (650) 555-0147\n");
     expect(sms.body).not.toMatch(/\bText\b|\bCall\b/);
     expect(sms.body).toContain("Thu Sep 3");
     expect(sms.body).toContain("10a-12p");
@@ -125,9 +125,9 @@ describe("buildSms", () => {
     expect(sms.body).not.toMatch(/\bText\b/);
   });
 
-  it("shows a text booking number without saying text or call", () => {
+  it("marks a text booking with T in front of the number", () => {
     const body = buildSms(payload({ replyChannel: "text" })).body;
-    expect(body).toContain("(650) 555-0147");
+    expect(body).toContain("\nT (650) 555-0147\n");
     expect(body).not.toMatch(/\bText\b|\bCall\b/);
   });
 
@@ -167,7 +167,7 @@ describe("buildSms", () => {
 
     expect(sms.body.startsWith("Hair 7\n")).toBe(true);
     expect(sms.body).toHaveLength(SMS_MAX_LENGTH);
-    expect(nameLine).toBe("Christopher Chen with the longest pos...");
+    expect(nameLine).toBe("Christopher Chen with the longest p...");
     expect(sms.body.endsWith("x".repeat(187))).toBe(true);
   });
 

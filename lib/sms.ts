@@ -138,7 +138,8 @@ function packAppointment(
   const day = payload.primary.date ? formatSmsDate(payload.primary.date) : "-";
 
   const phone = toGsm7(formatPhone(payload.phone));
-  const phoneLine = payload.replyChannel === "call" ? `Call ${phone}` : phone;
+  const phoneLine =
+    payload.replyChannel === "call" ? `Call ${phone}` : `T ${phone}`;
 
   return [
     "Hair 7",
