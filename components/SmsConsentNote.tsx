@@ -12,9 +12,8 @@ import { FieldError, describedBy } from "./Field";
  * opt-in: an unchecked checkbox, message type, frequency, rates, HELP/STOP,
  * and links to Terms and Privacy.
  *
- * It renders whatever the reply channel is, so a carrier reviewer who only
- * loads the page still sees the disclosure. Checking it is required to be
- * texted, and choosing "Call me" leaves it optional rather than hiding it.
+ * It shows before a reply method is chosen, and when they choose Text me.
+ * Call me is a return phone call, so the text opt-in is removed.
  */
 export function SmsConsentNote({
   id,
@@ -29,6 +28,7 @@ export function SmsConsentNote({
   error?: string;
   onChange: (next: boolean) => void;
 }) {
+  if (channel === "call") return null;
   const inputId = `${id}-smsConsent`;
 
   return (
@@ -49,7 +49,6 @@ export function SmsConsentNote({
       </div>
 
       <div id={`${inputId}-hint`} className="mt-3 space-y-2 text-small text-ink/75">
-        {channel === "call" ? <p>{smsProgram.callerNote}</p> : null}
         <p>
           <span className="font-semibold text-ink">Message frequency. </span>
           {smsProgram.frequency}
