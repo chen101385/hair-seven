@@ -308,7 +308,6 @@ same thing:
 
 | Item | Where |
 | --- | --- |
-| The hours note — walk-ins welcome, or appointment only? | `hoursNote` |
 | A lunch break, if she takes one at a fixed time | `hours` — would need a second range per day, which the picker doesn't model yet |
 | **Is she happy with both photos being public?** | `public/kim.jpg`, `public/kim-and-chris.jpg` |
 | A real logo or mark, if she has one | `app/favicon.ico`, `app/icon.svg` — both placeholders |
