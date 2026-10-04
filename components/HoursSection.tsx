@@ -45,8 +45,6 @@ export function HoursSection() {
                 })}
               </tbody>
             </table>
-
-            <p className="mt-4 text-small text-ink/75">{site.hoursNote}</p>
           </div>
 
           <div>

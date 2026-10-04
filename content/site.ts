@@ -54,9 +54,6 @@ export const site = {
     replyWindow: "24 to 48 hours",
   },
 
-  hoursNote:
-    "PLACEHOLDER — e.g. 'By appointment. Walk-ins welcome when the chair is open.'",
-
   services: [
     {
       name: "Haircut",
