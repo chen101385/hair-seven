@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileBar } from "@/components/MobileBar";
 import { site } from "@/content/site";
+import { listClosedDays } from "@/lib/closed-days";
 import { getAvailableDays } from "@/lib/hours";
 
 /**
@@ -20,12 +21,13 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function BookPage() {
+export default async function BookPage() {
+  const days = getAvailableDays(new Date(), await listClosedDays());
   return (
     <>
       <Header />
       <main>
-        <BookSection days={getAvailableDays()} />
+        <BookSection days={days} />
       </main>
       <Footer />
       <MobileBar />

@@ -51,6 +51,11 @@ function redisClient(): Redis | null {
   return credentials ? new Redis(credentials) : null;
 }
 
+/** Shared Upstash client. Null when the site is running without Redis. */
+export function getRedis(): Redis | null {
+  return redisClient();
+}
+
 export function hasDurableBookingStorage(): boolean {
   return redisClient() !== null;
 }
