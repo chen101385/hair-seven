@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
-type Day = { date: string; heading: string };
+type Day = { date: string; heading: string; month: string };
 
 export function ClosedDays({
   signedIn,
@@ -14,7 +13,6 @@ export function ClosedDays({
   days: Day[];
   closed: string[];
 }) {
-  const router = useRouter();
   const [phase, setPhase] = useState<"ask" | "enter" | "ready">(
     signedIn ? "ready" : "ask",
   );
@@ -53,7 +51,14 @@ export function ClosedDays({
       if (!response.ok || !data.ok) {
         throw new Error(data.message || "That code is not right.");
       }
-      router.refresh();
+      const saved = await fetch("/api/closed/days");
+      const savedData = (await saved.json()) as { ok?: boolean; closed?: string[] };
+      if (!saved.ok || !savedData.ok) {
+        window.location.assign("/closed");
+        return;
+      }
+      setClosedDates(savedData.closed ?? []);
+      setPhase("ready");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "That code is not right.");
     } finally {
@@ -137,26 +142,43 @@ export function ClosedDays({
     <div className="card p-6">
       <h1>Closed days</h1>
       <p className="mt-3">Tap a day to close it. Tap again to open it.</p>
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {days.map((day) => {
-          const isClosed = closedDates.includes(day.date);
-          return (
-            <button
-              key={day.date}
-              type="button"
-              className={`kim-choice ${isClosed ? "kim-choice-selected" : ""}`}
-              disabled={busy}
-              onClick={() => void toggle(day.date)}
-            >
-              {day.heading}
-              <span className="mt-1 block text-small font-normal">
-                {isClosed ? "Closed" : "Open"}
-              </span>
-            </button>
-          );
-        })}
+      <div className="mt-6 space-y-8">
+        {groupByMonth(days).map((group) => (
+          <section key={group.month}>
+            <h2 className="text-[1.35rem]">{group.month}</h2>
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {group.days.map((day) => {
+                const isClosed = closedDates.includes(day.date);
+                return (
+                  <button
+                    key={day.date}
+                    type="button"
+                    className={`kim-choice ${isClosed ? "kim-choice-selected" : ""}`}
+                    disabled={busy}
+                    onClick={() => void toggle(day.date)}
+                  >
+                    {day.heading}
+                    <span className="mt-1 block text-small font-normal">
+                      {isClosed ? "Closed" : "Open"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
       {error ? <p className="mt-4 font-semibold text-[#A12A1F]">{error}</p> : null}
     </div>
   );
+}
+
+function groupByMonth(days: Day[]): { month: string; days: Day[] }[] {
+  const groups: { month: string; days: Day[] }[] = [];
+  for (const day of days) {
+    const last = groups.at(-1);
+    if (!last || last.month !== day.month) groups.push({ month: day.month, days: [day] });
+    else last.days.push(day);
+  }
+  return groups;
 }

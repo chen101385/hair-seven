@@ -26,7 +26,7 @@ export default async function ClosedPage() {
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <ClosedDays
             signedIn={signedIn}
-            days={signedIn ? listClosableDays() : []}
+            days={listClosableDays()}
             closed={signedIn ? await listClosedDays() : []}
           />
         </div>
