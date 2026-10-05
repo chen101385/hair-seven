@@ -299,26 +299,45 @@ export function getKimOfferDays(
   return days;
 }
 
-/** Open weekdays Kim can mark closed. Mondays stay off this list. */
+/** Open weekdays Kim can mark closed, through one year from today. Mondays stay off this list. */
 export function listClosableDays(
   now: Date = new Date(),
-): { date: string; heading: string }[] {
+): { date: string; heading: string; month: string }[] {
   const { date: today } = salonNow(now);
   const tomorrow = addDays(today, 1);
-  const { daysAhead } = site.booking;
-  const days: { date: string; heading: string }[] = [];
+  const yearAhead = 366;
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const days: { date: string; heading: string; month: string }[] = [];
 
-  for (let offset = 0; offset < daysAhead; offset++) {
+  for (let offset = 0; offset < yearAhead; offset++) {
     const date = addDays(today, offset);
     const dayHours = site.hours[weekdayIndex(date)];
     if (!dayHours?.open || !dayHours.close) continue;
+    const [, month, dayOfMonth] = date.split("-").map(Number);
     const when =
       date === today
         ? "Today"
         : date === tomorrow
           ? "Tomorrow"
-          : WEEKDAYS_LONG[weekdayIndex(date)];
-    days.push({ date, heading: `${when}, ${formatDateLabel(date)}` });
+          : WEEKDAYS_LONG[weekdayIndex(date)].slice(0, 3);
+    days.push({
+      date,
+      heading: `${when} ${dayOfMonth}`,
+      month: `${months[month - 1]} ${date.slice(0, 4)}`,
+    });
   }
 
   return days;

@@ -15,6 +15,7 @@ import {
   generateAvailabilityWindows,
   getAvailableDays,
   getKimOfferDays,
+  listClosableDays,
   openingHoursSpecification,
   parseHHMM,
   salonNow,
@@ -280,6 +281,16 @@ describe("getKimOfferDays", () => {
     const today = getKimOfferDays(wednesdayAfternoon)[0];
     expect(today?.heading).toBe("Today, Sep 2");
     expect(today?.times[0]?.label).toBe("3:00 PM");
+  });
+});
+
+describe("listClosableDays", () => {
+  it("runs about a year ahead and skips Mondays", () => {
+    const days = listClosableDays(new Date("2026-10-05T17:00:00Z"));
+    expect(days[0]?.date).toBe("2026-10-06");
+    expect(days.some((day) => day.date === "2027-04-06")).toBe(true);
+    expect(days.at(-1)?.date).toBe("2027-10-05");
+    expect(days.some((day) => day.heading.startsWith("Mon"))).toBe(false);
   });
 });
 
