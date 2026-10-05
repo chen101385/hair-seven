@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { site } from "@/content/site";
+import { listClosedDays } from "@/lib/closed-days";
 import { getAvailableDays } from "@/lib/hours";
 import {
   bookingResponseUrl,
@@ -99,9 +100,9 @@ function normalize(raw: unknown): ContactPayload {
  * moves. Re-check every one against the same generator the picker used rather
  * than trusting whatever the browser sent.
  */
-function slotsStillOffered(value: PickerValue): boolean {
+function slotsStillOffered(value: PickerValue, closedDates: readonly string[]): boolean {
   if (!value.date || value.slots.length === 0) return false;
-  const day = getAvailableDays().find((d) => d.date === value.date);
+  const day = getAvailableDays(new Date(), closedDates).find((d) => d.date === value.date);
   if (!day) return false;
   return value.slots.every((slot) =>
     day.slots.some((offered) => offered.start === slot),
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
   if (
     payload.formType === "appointment" &&
     !fieldErrors.primary &&
-    !slotsStillOffered(payload.primary)
+    !slotsStillOffered(payload.primary, await listClosedDays())
   ) {
     fieldErrors.primary =
       payload.primary.slots.length > 1

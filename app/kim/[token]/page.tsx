@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { site } from "@/content/site";
+import { listClosedDays } from "@/lib/closed-days";
 import {
   formatFullDateLabel,
   formatTime12,
@@ -37,6 +38,7 @@ export default async function KimBookingPage({
   }
 
   const { payload } = record;
+  const closed = await listClosedDays();
   const exactTimes = getExactTimes(payload.primary.date, payload.primary.slots);
 
   return (
@@ -60,7 +62,7 @@ export default async function KimBookingPage({
           notes: payload.notes,
         }}
         exactTimes={exactTimes}
-        offerDays={getKimOfferDays()}
+        offerDays={getKimOfferDays(new Date(), closed)}
       />
     </KimPageShell>
   );

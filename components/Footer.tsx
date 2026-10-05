@@ -69,6 +69,10 @@ export function Footer() {
           >
             Privacy
           </Link>
+          {" · "}
+          <Link href="/closed" className="text-paper/45 hover:text-paper/80">
+            Closed
+          </Link>
         </p>
       </div>
     </footer>

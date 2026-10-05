@@ -8,6 +8,7 @@ import { MobileBar } from "@/components/MobileBar";
 import { Reveal } from "@/components/Reveal";
 import { Services } from "@/components/Services";
 import { StructuredData } from "@/components/StructuredData";
+import { listClosedDays } from "@/lib/closed-days";
 import { getAvailableDays } from "@/lib/hours";
 
 /**
@@ -18,8 +19,8 @@ import { getAvailableDays } from "@/lib/hours";
  */
 export const revalidate = 900;
 
-export default function Home() {
-  const days = getAvailableDays();
+export default async function Home() {
+  const days = getAvailableDays(new Date(), await listClosedDays());
 
   return (
     <>

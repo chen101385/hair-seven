@@ -175,6 +175,11 @@ describe("getAvailableDays", () => {
     expect(days[0].date).toBe("2026-09-03");
   });
 
+  it("drops a day Kim has marked closed", () => {
+    const days = getAvailableDays(tuesdayMorning, ["2026-09-02"]);
+    expect(days.map((day) => day.date)).not.toContain("2026-09-02");
+  });
+
   it("never offers a day the salon is closed", () => {
     const closed = new Set<string>(
       site.hours.filter((h) => !h.open || !h.close).map((h) => h.day),

@@ -203,16 +203,20 @@ export function generateAvailabilityWindows(
  * minus blackout dates, minus days whose slots have all been eaten by the lead
  * time. Closed days are omitted entirely — never greyed out.
  */
-export function getAvailableDays(now: Date = new Date()): AvailableDay[] {
+export function getAvailableDays(
+  now: Date = new Date(),
+  closedDates: readonly string[] = [],
+): AvailableDay[] {
   const { date: today, minutes: nowMinutes } = salonNow(now);
   const { daysAhead, leadTimeHours, blackoutDates } = site.booking;
   const earliest = nowMinutes + leadTimeHours * 60;
+  const blocked = new Set([...blackoutDates, ...closedDates]);
 
   const days: AvailableDay[] = [];
 
   for (let offset = 0; offset < daysAhead; offset++) {
     const date = addDays(today, offset);
-    if (blackoutDates.includes(date)) continue;
+    if (blocked.has(date)) continue;
 
     const dayHours = site.hours[weekdayIndex(date)];
     if (!dayHours?.open || !dayHours.close) continue;
@@ -253,15 +257,19 @@ export type KimOfferDay = {
  * Times are every half hour from open until close, and today's past times are
  * left out.
  */
-export function getKimOfferDays(now: Date = new Date()): KimOfferDay[] {
+export function getKimOfferDays(
+  now: Date = new Date(),
+  closedDates: readonly string[] = [],
+): KimOfferDay[] {
   const { date: today, minutes: nowMinutes } = salonNow(now);
   const tomorrow = addDays(today, 1);
   const { daysAhead, blackoutDates } = site.booking;
+  const blocked = new Set([...blackoutDates, ...closedDates]);
   const days: KimOfferDay[] = [];
 
   for (let offset = 0; offset < daysAhead; offset++) {
     const date = addDays(today, offset);
-    if (blackoutDates.includes(date)) continue;
+    if (blocked.has(date)) continue;
     const dayHours = site.hours[weekdayIndex(date)];
     if (!dayHours?.open || !dayHours.close) continue;
 
@@ -286,6 +294,31 @@ export function getKimOfferDays(now: Date = new Date()): KimOfferDay[] {
       heading: `${when}, ${formatDateLabel(date)}`,
       times,
     });
+  }
+
+  return days;
+}
+
+/** Open weekdays Kim can mark closed. Mondays stay off this list. */
+export function listClosableDays(
+  now: Date = new Date(),
+): { date: string; heading: string }[] {
+  const { date: today } = salonNow(now);
+  const tomorrow = addDays(today, 1);
+  const { daysAhead } = site.booking;
+  const days: { date: string; heading: string }[] = [];
+
+  for (let offset = 0; offset < daysAhead; offset++) {
+    const date = addDays(today, offset);
+    const dayHours = site.hours[weekdayIndex(date)];
+    if (!dayHours?.open || !dayHours.close) continue;
+    const when =
+      date === today
+        ? "Today"
+        : date === tomorrow
+          ? "Tomorrow"
+          : WEEKDAYS_LONG[weekdayIndex(date)];
+    days.push({ date, heading: `${when}, ${formatDateLabel(date)}` });
   }
 
   return days;

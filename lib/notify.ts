@@ -31,6 +31,11 @@ export async function deliverCustomerSms(sms: Sms) {
   return sendSms(sms, "the customer");
 }
 
+/** A one-off text, such as the closed-days code. Not a booking notification. */
+export async function sendPlainSms(to: string, body: string): Promise<DeliveryMode> {
+  return sendSms({ to, body }, "Kim");
+}
+
 async function sendSms(
   sms: Sms,
   recipient: "Kim" | "the customer",

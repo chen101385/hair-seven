@@ -6,6 +6,7 @@ import {
   withBookingLock,
   type AlternativeWindow,
 } from "@/lib/booking-requests";
+import { listClosedDays } from "@/lib/closed-days";
 import {
   formatTime12,
   generateAvailabilityWindows,
@@ -64,7 +65,7 @@ export async function POST(
 
       if (body.action === "alternatives") {
         const options = normalizeAlternatives(body.options);
-        if (options.length === 0 || !alternativesAreOffered(options)) {
+        if (options.length === 0 || !(await alternativesAreOffered(options))) {
           return fail("Please choose one to three available alternatives.");
         }
         await deliverCustomerSms(
@@ -117,9 +118,10 @@ function normalizeAlternatives(value: unknown): AlternativeWindow[] {
   return Array.from(unique.values());
 }
 
-function alternativesAreOffered(options: AlternativeWindow[]): boolean {
+async function alternativesAreOffered(options: AlternativeWindow[]): Promise<boolean> {
+  const closed = await listClosedDays();
   const offered = new Map(
-    getKimOfferDays().map((day) => [
+    getKimOfferDays(new Date(), closed).map((day) => [
       day.date,
       new Set(day.times.map((time) => time.start)),
     ]),
