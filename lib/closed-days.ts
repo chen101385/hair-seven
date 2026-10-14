@@ -77,12 +77,33 @@ export async function setDateClosed(
   now = new Date(),
 ): Promise<string[] | null> {
   if (!isClosableDate(date, now)) return null;
+  const current = await listClosedDays();
+  const next = new Set(current);
+  if (closed) next.add(date);
+  else next.delete(date);
+  return writeClosedDays([...next], now);
+}
+
+/** Replace the closable days with this set. Dates outside the year list are kept. */
+export async function replaceClosedDays(
+  dates: string[],
+  now = new Date(),
+): Promise<string[] | null> {
+  if (!dates.every((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))) return null;
+  const allowed = new Set(listClosableDays(now).map((day) => day.date));
+  if (dates.some((date) => !allowed.has(date))) return null;
+  return writeClosedDays(dates, now);
+}
+
+async function writeClosedDays(
+  dates: string[],
+  now: Date,
+): Promise<string[] | null> {
   const redis = getRedis();
   if (!redis) return null;
-  const current = new Set(await listClosedDays());
-  if (closed) current.add(date);
-  else current.delete(date);
-  const next = [...current].sort();
+  const allowed = new Set(listClosableDays(now).map((day) => day.date));
+  const kept = (await listClosedDays()).filter((date) => !allowed.has(date));
+  const next = [...new Set([...kept, ...dates])].sort();
   await redis.set(DATES_KEY, next);
   return next;
 }

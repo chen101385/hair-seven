@@ -13,9 +13,10 @@ export function ClosedDays({
   days: Day[];
   closed: string[];
 }) {
-  const [phase, setPhase] = useState<"ask" | "enter" | "ready">(
+  const [phase, setPhase] = useState<"ask" | "enter" | "ready" | "confirm">(
     signedIn ? "ready" : "ask",
   );
+  const [savedNote, setSavedNote] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [closedDates, setClosedDates] = useState(closed);
   const [busy, setBusy] = useState(false);
@@ -66,29 +67,40 @@ export function ClosedDays({
     }
   };
 
-  const toggle = async (date: string) => {
-    const nextClosed = !closedDates.includes(date);
+  const toggle = (date: string) => {
+    setSavedNote(null);
+    setClosedDates((current) =>
+      current.includes(date) ? current.filter((item) => item !== date) : [...current, date],
+    );
+  };
+
+  const save = async () => {
     setBusy(true);
     setError(null);
     try {
+      const visible = new Set(days.map((day) => day.date));
       const response = await fetch("/api/closed/days", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, closed: nextClosed }),
+        body: JSON.stringify({
+          dates: closedDates.filter((date) => visible.has(date)),
+        }),
       });
       const data = (await response.json()) as { ok: boolean; message?: string; closed?: string[] };
       if (!response.ok || !data.ok || !data.closed) {
-        throw new Error(data.message || "That day did not save.");
+        throw new Error(data.message || "Those days did not save.");
       }
       setClosedDates(data.closed);
+      setSavedNote("Saved.");
+      setPhase("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "That day did not save.");
+      setError(caught instanceof Error ? caught.message : "Those days did not save.");
     } finally {
       setBusy(false);
     }
   };
 
-  if (phase !== "ready") {
+  if (phase === "ask" || phase === "enter") {
     return (
       <div className="card p-6">
         <h1>Closed days</h1>
@@ -138,10 +150,64 @@ export function ClosedDays({
     );
   }
 
+  if (phase === "confirm") {
+    const selected = days.filter((day) => closedDates.includes(day.date));
+    return (
+      <div className="card p-6">
+        <h1>Confirm</h1>
+        <p className="mt-3">These days will be closed.</p>
+        {selected.length === 0 ? (
+          <p className="mt-4 font-semibold">No days are closed.</p>
+        ) : (
+          <ul className="mt-5 space-y-4">
+            {groupByMonth(selected).map((group) => (
+              <li key={group.month}>
+                <p className="font-semibold">{group.month}</p>
+                <p className="mt-1">{group.days.map((day) => day.heading).join(", ")}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            className="btn btn-secondary min-h-14"
+            disabled={busy}
+            onClick={() => setPhase("ready")}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary min-h-14"
+            disabled={busy}
+            onClick={() => void save()}
+          >
+            {busy ? "Saving…" : "Save"}
+          </button>
+        </div>
+        {error ? <p className="mt-4 font-semibold text-[#A12A1F]">{error}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="card p-6">
-      <h1>Closed days</h1>
-      <p className="mt-3">Tap a day to close it. Tap again to open it.</p>
+      <div className="flex items-center justify-between gap-3">
+        <h1>Closed days</h1>
+        <button
+          type="button"
+          className="btn btn-primary min-h-12 shrink-0 px-4"
+          onClick={() => {
+            setError(null);
+            setPhase("confirm");
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+      <p className="mt-3">Tap a day to close it. Tap again to open it. Then press Confirm.</p>
+      {savedNote ? <p className="mt-3 font-semibold">{savedNote}</p> : null}
       <div className="mt-6 space-y-8">
         {groupByMonth(days).map((group) => (
           <section key={group.month}>
